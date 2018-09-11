@@ -1,4 +1,5 @@
 #include <OctoWS2811.h>
+#include "messages.h"
 
 const int ledsInStrip = 228;
 
@@ -12,52 +13,6 @@ OctoWS2811 leds(ledsInStrip, displayMemory, drawingMemory, led_config);
   Only the first strip is used.
   There are 228 leds in total attached to the first strip.
 */
-
-//  Message definitions
-using RGB = struct
-{
-  uint8_t R;
-  uint8_t G;
-  uint8_t B;
-};
-
-enum MsgType
-{
-  NOP = 0,
-  CONFIG = 1,
-  COLORS = 2
-};
-using Config = struct
-{
-  uint32_t decay_time_delay_ms;  // 0 is disabled.
-  uint32_t decay_interval_us;
-  uint32_t decay_amount;
-};
-
-using ColorData = struct
-{
-  uint16_t offset;
-  uint8_t settings;
-  RGB color[19];  // takes 12 messages to send 228 bytes
-};
-#define COLOR_SETTINGS_SHOW_AFTER (1<<0)
-#define COLOR_SETTINGS_SET_ALL (1<<1)
-
-using Message = struct
-{
-  MsgType type;
-  uint8_t _[3];  // padding
-  union
-  {
-    ColorData color;
-    Config config;
-    uint8_t raw[60];
-  };
-};  // exactly 64 bytes long = 1 usb packet.
-
-
-//
-
 Config config;
 elapsedMillis decay_last_event;
 elapsedMicros decay_interval;
@@ -156,7 +111,7 @@ void processCommand(const Message& msg)
       config = msg.config;
     break;
 
-    case COLORS:
+    case COLOR:
       if (msg.color.settings & COLOR_SETTINGS_SET_ALL)
       {
         // setting all colors
