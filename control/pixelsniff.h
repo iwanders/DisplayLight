@@ -43,24 +43,19 @@ void getRoot(Display*& display, Window& root_window);
 class PixelSniffer
 {
 public:
-  Display* display_;
-  Window root_window_;
-  Colormap cmap_;
-  XImage* ximage_;
-  XShmSegmentInfo shminfo_;
+
+
 
   PixelSniffer();
+
   void populate();
-  std::vector<WindowInfo> windows_;
-  size_t window_index_;
-  WindowInfo window_;
+  void connect();
 
   bool selectWindow(size_t index);
 
   bool grabContent();
   void cleanImage();
 
-  size_t x_, y_, width_, height_;
   void setupCaptureArea(size_t x, size_t y, size_t width, size_t height);
 
   size_t imageWidth();
@@ -69,8 +64,21 @@ public:
 
   std::vector<std::vector<uint32_t>> content();
   void content(std::vector<std::vector<uint32_t>>& content);
+
   std::string imageToPPM();
-  std::string imageToPPM(const std::vector<std::vector<uint32_t>>& raster);
+  static std::string imageToPPM(const std::vector<std::vector<uint32_t>>& raster);
+  std::vector<WindowInfo> windows_;
+protected:
+
+  Display* display_;  // incomplete type, cannot use .reset() on shared pointer.
+  std::shared_ptr<XImage> ximage_;
+  XShmSegmentInfo shminfo_;
+  Window root_window_;
+
+  Colormap cmap_;
+  size_t window_index_;
+  WindowInfo window_;
+  size_t x_, y_, width_, height_;
 };
 
 #endif

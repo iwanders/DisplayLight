@@ -196,6 +196,7 @@ void printCanvas(const std::array<RGB, led_count>& canvas)
 int main(int argc, char* argv[])
 {
   PixelSniffer sniff;
+  sniff.connect();
   sniff.populate();
   sniff.selectWindow(0);  // 0 is the root window.
   sniff.grabContent();

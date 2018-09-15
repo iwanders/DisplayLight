@@ -81,8 +81,6 @@ std::vector<WindowInfo> recuseWindows(Display* display, Window root_window)
 
 void getRoot(Display*& display, Window& root_window)
 {
-  display = XOpenDisplay((char*)NULL);
-  root_window = XRootWindow(display, XDefaultScreen(display));
 }
 
 // ugh, legacy stuff is legacy.
@@ -101,20 +99,30 @@ static int handleError(Display* display, XErrorEvent* error)
   throw std::runtime_error("Foo");
 }
 
-PixelSniffer::PixelSniffer() : ximage_(nullptr)
+PixelSniffer::PixelSniffer()
 {
   XSetErrorHandler(handleError);
+}
+
+void PixelSniffer::connect()
+{
+
+  display_ = XOpenDisplay(nullptr);
+  root_window_ = XRootWindow(display_, XDefaultScreen(display_));
+  int dummy, pixmaps_supported;
   
+  if (!XShmQueryExtension(display_))
+  {
+    throw std::runtime_error("XShmQueryExtension needs to be available.");
+  }
+
+  cmap_ = DefaultColormap(display_, DefaultScreen(display_));
+
+
 }
 
 void PixelSniffer::populate()
 {
-  // Display* display = nullptr;
-  // Window root_window;
-  getRoot(display_, root_window_);
-  cmap_ = DefaultColormap(display_, DefaultScreen(display_));
-  std::cout << cmap_ << std::endl;
-
   auto windows = recuseWindows(display_, root_window_);
   for (const auto& window : windows)
   {
@@ -126,10 +134,7 @@ void PixelSniffer::populate()
 
 void PixelSniffer::cleanImage()
 {
-  if (ximage_)
-  {
-    XDestroyImage(ximage_);
-  }
+  ximage_.reset();
 }
 
 bool PixelSniffer::selectWindow(size_t index)
@@ -150,6 +155,17 @@ bool PixelSniffer::selectWindow(size_t index)
     return false;
   }
 
+  ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
+  attributes.depth, ZPixmap, NULL, &shminfo_,
+  attributes.width, attributes.height), [](auto z){});
+
+  shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
+  ximage_->data = static_cast<char*>(shmat(shminfo_.shmid, 0, 0));
+  shminfo_.shmaddr = ximage_->data;
+  shminfo_.readOnly = False;
+
+  XShmAttach(display_, &shminfo_);
+
   cmap_ = attributes.colormap;
   window_index_ = index;
   window_ = windows_[index];
@@ -167,31 +183,21 @@ void PixelSniffer::setupCaptureArea(size_t x, size_t y, size_t width, size_t hei
 
 bool PixelSniffer::grabContent()
 {
-  cleanImage();
-  // https://tronche.com/gui/x/xlib/graphics/XCopyArea.html may be more efficient?
-
-  // before grab, lets try to map it.
   XMapWindow(display_, window_.window);
-  // XMapSubwindows(display_, window_.window);
   XMapRaised(display_, window_.window);
   try
   {
-    //  std::cout << "x_: " << x_ << std::endl;
-    //  std::cout << "y_: " << y_ << std::endl;
-    //  std::cout << "width_: " << width_ << std::endl;
-    //  std::cout << "height_: " << height_ << std::endl;
-
-    ximage_ = XGetImage(display_, window_.window, x_, y_, width_, height_, AllPlanes, ZPixmap);
+    //  XImage* ximage = nullptr;
+    //  XShmGetImage(display_, window_.window, _xImage, _cropLeft, _cropTop, AllPlanes);
+    //  XImage* ximage = XGetImage(display_, window_.window, x_, y_, width_, height_, AllPlanes, ZPixmap);
+    //  ximage_.reset(ximage, [](auto im){XDestroyImage(im);});
+    XShmGetImage(display_, window_.window, ximage_.get(), 0, 0, AllPlanes);
   }
   catch (const std::runtime_error& e)
   {
-    std::cout << "Caught" << std::endl;
+    std::cout << "Caught exception in " << __PRETTY_FUNCTION__ << ": " << e.what() << std::endl;
   }
-  if (ximage_ == nullptr)
-  {
-    return false;
-  }
-  return true;
+  return bool{ximage_};
 }
 
 size_t PixelSniffer::imageWidth()
@@ -216,7 +222,7 @@ uint32_t PixelSniffer::imagePixel(size_t x, size_t y)
   XColor color;
   if ((x < imageWidth()) && (y < imageHeight()))
   {
-    color.pixel = XGetPixel(ximage_, x, y);
+    color.pixel = XGetPixel(ximage_.get(), x, y);
 
     // this query here is actually not really necessary... its just ARGB
     /*

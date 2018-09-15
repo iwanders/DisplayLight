@@ -20,6 +20,7 @@ int main(int argc, char* argv[])
   };
 
   PixelSniffer sniff;
+  sniff.connect();
   sniff.populate();
   size_t target_index = 0;
   for (size_t i = 0; i < std::min<size_t>(1500, sniff.windows_.size()); i++)
