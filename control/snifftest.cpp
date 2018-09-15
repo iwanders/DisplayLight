@@ -36,10 +36,13 @@ int main(int argc, char* argv[])
     {
       std::cout << " " << (*wmclass).second << std::endl;
     }
-    else
+    auto zzz = window.window_info.find("_NET_WM_PID");
+    if (zzz != window.window_info.end())
     {
-      std::cout << std::endl;
+      uint32_t pid = (zzz->second[0] & 0xFF) + ((zzz->second[1] & 0xFF) << 8);
+      std::cout << "Pid: " << pid;
     }
+    std::cout << std::endl;
     for (const auto& it : window.window_info)
     {
     }
