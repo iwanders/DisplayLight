@@ -224,7 +224,7 @@ uint32_t PixelSniffer::imagePixel(size_t x, size_t y)
   {
     color.pixel = XGetPixel(ximage_.get(), x, y);
 
-    // this query here is actually not really necessary... its just ARGB
+    // this query here is actually not really necessary... it's just ARGB
     /*
     XQueryColor(display_, cmap_, &color);
     uint8_t r = (color.red >> 8);
@@ -284,29 +284,6 @@ std::string PixelSniffer::imageToPPM(const std::vector<std::vector<uint32_t>>& r
     for (size_t x = 0; x < raster[y].size(); x++)
     {
       uint32_t color = raster[y][x];
-      const int red = (color >> 16) & 0xFF;
-      const int green = (color >> 8) & 0xFF;
-      const int blue = (color)&0xFF;
-      ss << "" << red << " "
-         << " " << green << " " << blue << " ";
-    }
-    ss << "\n";
-  }
-  return ss.str();
-}
-
-std::string PixelSniffer::imageToPPM()
-{
-  std::stringstream ss;
-  ss << "P3\n";
-  ss << imageWidth() << " " << imageHeight() << "\n";
-  ss << "255\n";
-  ss << "# data now\n";
-  for (size_t y = 0; y < imageHeight(); y++)
-  {
-    for (size_t x = 0; x < imageWidth(); x++)
-    {
-      uint32_t color = imagePixel(x, y);
       const int red = (color >> 16) & 0xFF;
       const int green = (color >> 8) & 0xFF;
       const int blue = (color)&0xFF;

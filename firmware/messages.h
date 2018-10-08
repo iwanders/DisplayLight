@@ -2,7 +2,7 @@
 #define FIRMWARE_MESSAGES_H
 
 //  Message definitions
-using RGB = struct
+struct RGB
 {
   uint8_t R;
   uint8_t G;
@@ -15,14 +15,15 @@ enum MsgType : uint8_t
   CONFIG = 1,
   COLOR = 2
 };
-using Config = struct
+
+struct Config
 {
   uint32_t decay_time_delay_ms;  // 0 is disabled.
   uint32_t decay_interval_us;
   uint32_t decay_amount;
 };
 
-using ColorData = struct
+struct ColorData
 {
   uint16_t offset;
   uint8_t settings;
@@ -31,7 +32,7 @@ using ColorData = struct
 #define COLOR_SETTINGS_SHOW_AFTER (1<<0)
 #define COLOR_SETTINGS_SET_ALL (1<<1)
 
-using Message = struct
+struct Message
 {
   MsgType type;
   uint8_t _[3];  // padding

@@ -11,9 +11,11 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_library(pixelsniff pixelsniff.cpp)
 target_link_libraries(pixelsniff ${X11_LIBRARIES} )
 
-add_executable(main main.cpp)
-target_link_libraries(main pixelsniff ${Boost_LIBRARIES})
+add_library(screen_analyzer screen_analyzer.cpp)
+target_link_libraries(screen_analyzer ${X11_LIBRARIES})
 
+add_executable(main main.cpp)
+target_link_libraries(main pixelsniff screen_analyzer ${Boost_LIBRARIES})
 
 add_executable(snifftest snifftest.cpp)
 target_link_libraries(snifftest pixelsniff ${Boost_LIBRARIES})

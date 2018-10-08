@@ -62,15 +62,14 @@ public:
   size_t imageHeight();
   uint32_t imagePixel(size_t x, size_t y);
 
-  std::vector<std::vector<uint32_t>> content();
-  void content(std::vector<std::vector<uint32_t>>& content);
+  std::vector<std::vector<std::uint32_t>> content();
+  void content(std::vector<std::vector<std::uint32_t>>& content);
 
-  std::string imageToPPM();
   static std::string imageToPPM(const std::vector<std::vector<uint32_t>>& raster);
   std::vector<WindowInfo> windows_;
 protected:
 
-  Display* display_;  // incomplete type, cannot use .reset() on shared pointer.
+  Display* display_;
   std::shared_ptr<XImage> ximage_;
   XShmSegmentInfo shminfo_;
   Window root_window_;
