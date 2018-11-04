@@ -54,6 +54,7 @@ void setup()
   leds.show();
   delay(3000);
 
+
   // reset counters.
   decay_last_event = 0;
   decay_interval = 0;
@@ -147,7 +148,7 @@ void loopSerial()
     {
       decay_last_event = 0;
       processCommand(msg);
-    }
+    }   
   }
 }
 

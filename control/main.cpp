@@ -64,9 +64,9 @@ void limiter(std::vector<RGB>& canvas)
 {
   for (auto& rgb : canvas)
   {
-    rgb.R /= 8;
-    rgb.G /= 8;
-    rgb.B /= 8;
+    rgb.R /= 2;
+    rgb.G /= 2;
+    rgb.B /= 2;
   }
 }
 
@@ -147,6 +147,7 @@ int main(int argc, char* argv[])
     size_t count = 0;
     while (1)
     {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       tic();
       bool res = sniff.grabContent();
       sniff.content(content);

@@ -19,3 +19,6 @@ target_link_libraries(main pixelsniff screen_analyzer ${Boost_LIBRARIES})
 
 add_executable(snifftest snifftest.cpp)
 target_link_libraries(snifftest pixelsniff ${Boost_LIBRARIES})
+
+add_executable(analyzer_test analyzer_test.cpp)
+target_link_libraries(analyzer_test pixelsniff screen_analyzer ${Boost_LIBRARIES})
