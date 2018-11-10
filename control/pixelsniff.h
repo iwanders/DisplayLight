@@ -43,6 +43,7 @@ void getRoot(Display*& display, Window& root_window);
 class PixelSniffer
 {
 public:
+  using Screen = std::vector<std::vector<uint32_t>>;
 
 
 
@@ -65,8 +66,11 @@ public:
   std::vector<std::vector<std::uint32_t>> content();
   void content(std::vector<std::vector<std::uint32_t>>& content);
 
-  static std::string imageToPPM(const std::vector<std::vector<uint32_t>>& raster);
+  static std::string imageToPPM(const Screen& raster);
   std::vector<WindowInfo> windows_;
+
+  static Screen readContents(const std::string& filename);
+  static void writeContents(const std::string& filename, const Screen& contents);
 protected:
 
   Display* display_;

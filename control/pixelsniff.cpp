@@ -1,5 +1,6 @@
 
 #include "pixelsniff.h"
+#include <fstream>
 
 WindowInfo::WindowInfo(Display* displayz, Window windowt, size_t levelt)
 {
@@ -242,7 +243,7 @@ uint32_t PixelSniffer::imagePixel(size_t x, size_t y)
   return 0;
 }
 
-void PixelSniffer::content(std::vector<std::vector<uint32_t>>& res)
+void PixelSniffer::content(Screen& res)
 {
   uint8_t* data = reinterpret_cast<uint8_t*>(ximage_->data);
   const uint8_t stride = ximage_->bits_per_pixel / 8;
@@ -258,9 +259,9 @@ void PixelSniffer::content(std::vector<std::vector<uint32_t>>& res)
   }
 }
 
-std::vector<std::vector<uint32_t>> PixelSniffer::content()
+PixelSniffer::Screen PixelSniffer::content()
 {
-  std::vector<std::vector<uint32_t>> res;
+  Screen res;
   res.resize(imageHeight());
   const uint32_t width = imageWidth();
   const uint32_t height = imageHeight();
@@ -272,7 +273,7 @@ std::vector<std::vector<uint32_t>> PixelSniffer::content()
   return res;
 }
 
-std::string PixelSniffer::imageToPPM(const std::vector<std::vector<uint32_t>>& raster)
+std::string PixelSniffer::imageToPPM(const Screen& raster)
 {
   std::stringstream ss;
   ss << "P3\n";
@@ -293,4 +294,42 @@ std::string PixelSniffer::imageToPPM(const std::vector<std::vector<uint32_t>>& r
     ss << "\n";
   }
   return ss.str();
+}
+
+PixelSniffer::Screen PixelSniffer::readContents(const std::string& filename)
+{
+  std::ifstream ifs(filename, std::ios::binary|std::ios::ate);
+
+  size_t width = 0;
+  size_t height = 0;
+  Screen contents;
+  
+  ifs.seekg(0, std::ios::beg);
+  ifs.read(reinterpret_cast<char*>(&width), sizeof(width));
+  ifs.read(reinterpret_cast<char*>(&height), sizeof(height));
+  contents.resize(height);
+  for (auto& row : contents)
+  {
+    row.resize(width);
+    ifs.read(reinterpret_cast<char*>(row.data()), width * sizeof(contents.front()[0]));
+  }
+  ifs.close();
+  return contents;
+}
+void PixelSniffer::writeContents(const std::string& filename, const Screen& contents)
+{
+  std::ofstream fout;
+  fout.open(filename, std::ios::binary | std::ios::out);
+
+  size_t width = contents.front().size();
+  size_t height = contents.size();
+
+  fout.write(reinterpret_cast<const char*>(&width), sizeof(width));
+  fout.write(reinterpret_cast<const char*>(&height), sizeof(height));
+  for (auto& row : contents)
+  {
+    fout.write(reinterpret_cast<const char*>(row.data()), width * sizeof(row[0]));
+  }
+
+  fout.close();
 }

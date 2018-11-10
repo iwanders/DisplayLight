@@ -1,4 +1,5 @@
 #include "screen_analyzer.h"
+#include <iostream>
 
 
 RGB ScreenAnalyzer::average(const std::vector<std::vector<std::uint32_t>>& screen, size_t xmin, size_t ymin, size_t xmax, size_t ymax)
@@ -27,21 +28,17 @@ RGB ScreenAnalyzer::average(const std::vector<std::vector<std::uint32_t>>& scree
   return {static_cast<uint8_t>(R), static_cast<uint8_t>(G), static_cast<uint8_t>(B)};
 }
 
-std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<std::uint32_t>>& screen)
+std::vector<LedBox> ScreenAnalyzer::getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth)
 {
-  auto canvas = std::vector<RGB>{led_count_, {0, 0, 0}};
-// left side 0 - 41 (starts top)
-// bottom side: 42 - 113 (starts left)
-// right side: 114 - 155 (starts bottom)
-// top side: 156 - 227 (starts right)
-  const auto height = screen.size();
-  const auto width = screen.front().size();
+  std::vector<LedBox> res;
+  res.reserve(led_count_);
 
+  // left side 0 - 41 (starts top)
+  // bottom side: 42 - 113 (starts left)
+  // right side: 114 - 155 (starts bottom)
+  // top side: 156 - 227 (starts right)
   const size_t vertical_step = height / horizontal_count_;
   const size_t horizontal_step = width / vertical_count_;
-
-  const size_t horizontal_celldepth = 150;   // into the screen.
-  const size_t vertical_celldepth = 200;   // into the screen.
 
   // do left first.
   for (size_t led = 0; led < led_count_; led++)
@@ -52,9 +49,10 @@ std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<s
       const uint32_t pos = led - 0;
       // left side.
       xmin = 0;
-      xmax = horizontal_celldepth;
+      xmax = horizontal_depth;
       ymin = pos * vertical_step;
       ymax = (pos + 1) * vertical_step;
+      res.emplace_back(led, xmin, xmax, ymin, ymax);
     }
     else if (led < 114)
     {
@@ -62,17 +60,19 @@ std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<s
       const uint32_t pos = led - 42;
       xmin = pos * horizontal_step;
       xmax = (pos + 1) * horizontal_step;
-      ymin = height - vertical_celldepth;
+      ymin = height - vertical_depth;
       ymax = height;
+      res.emplace_back(led, xmin, xmax, ymin, ymax);
     }
     else if (led < 156)
     {
       // right side.
       const uint32_t pos = led - 114;
-      xmin = width - horizontal_celldepth;
+      xmin = width - horizontal_depth;
       xmax = width;
       ymin = height - (pos + 1) * vertical_step;
       ymax = height - (pos + 0) * vertical_step;
+      res.emplace_back(led, xmin, xmax, ymin, ymax);
     }
     else if (led < led_count_ + 1)
     {
@@ -81,20 +81,27 @@ std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<s
       xmin = width - (pos + 1) * horizontal_step;
       xmax = width - (pos + 0) * horizontal_step;
       ymin = 0;
-      ymax = vertical_celldepth;
+      ymax = vertical_depth;
+      res.emplace_back(led, xmin, xmax, ymin, ymax);
     }
-    else
-    {
-      continue;
-    }
-    auto color = average(screen, xmin, ymin, xmax, ymax);
-    canvas[led] = color;
+  }
+  return res;
+}
+std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<std::uint32_t>>& screen)
+{
+  auto canvas = std::vector<RGB>{led_count_, {0, 0, 0}};
+  auto boxes = getBoxes(screen.front().size(), screen.size(), 300, 200);
+
+  // do left first.
+  for (const auto& box : boxes)
+  {
+    canvas[box.index] = average(screen, box.x_min, box.y_min, box.x_max, box.y_max);
   }
   return canvas;
 }
 
 
-std::vector<Sample> ScreenAnalyzer::sampleCanvas(const std::vector<std::vector<std::uint32_t>>& screen)
+std::vector<Sample> ScreenAnalyzer::sampleCanvas(const std::vector<std::vector<std::uint32_t>>& screen, const size_t max_level)
 {
   const auto height = screen.size();
   const auto width = screen.front().size();
@@ -102,10 +109,8 @@ std::vector<Sample> ScreenAnalyzer::sampleCanvas(const std::vector<std::vector<s
 
   std::vector<Sample> res;
 
-  const size_t max_levels = 8;
-
   std::function<bool(size_t, size_t, size_t, size_t, size_t)> recurser;
-  auto worker = [&screen, &max_levels, &res, &recurser](size_t xmin, size_t xmax, size_t ymin, size_t ymax, size_t level)
+  auto worker = [&screen, &max_level, &res, &recurser](size_t xmin, size_t xmax, size_t ymin, size_t ymax, size_t level)
   {
     // We're handed in a region.
     /*
@@ -121,7 +126,7 @@ std::vector<Sample> ScreenAnalyzer::sampleCanvas(const std::vector<std::vector<s
         *------------------*
       xmin, ymax          xmax, ymax
     */
-    if (level >= max_levels)
+    if (level >= max_level)
     {
       return false;
     }
@@ -173,4 +178,69 @@ std::vector<Sample> ScreenAnalyzer::sampleCanvas(const std::vector<std::vector<s
 
 
   return res;
+}
+
+
+std::vector<RGB> ScreenAnalyzer::sampledBoxer(const std::vector<std::vector<std::uint32_t>>& screen)
+{
+
+  auto canvas = std::vector<RGB>{led_count_, {0, 0, 0}};
+
+  auto analyzed = sampleCanvas(screen, 9);
+
+  // Run through analyzed to determine min and max of everything.
+  size_t x_min = screen.front().size();
+  size_t x_max = 0;
+  size_t y_min = screen.size();
+  size_t y_max = 0;
+  for (const auto& sample : analyzed)
+  {
+    x_min = std::min(x_min, sample.x);
+    x_max = std::max(x_max, sample.x);
+    y_min = std::min(y_min, sample.y);
+    y_max = std::max(y_max, sample.y);
+  }
+  std::cout << "  x_min: " << x_min << std::endl;
+  std::cout << "  x_max: " << x_max << std::endl;
+  std::cout << "  y_min: " << y_min << std::endl;
+  std::cout << "  y_max: " << y_max << std::endl;
+
+  // create boxes.
+  auto boxes = getBoxes(x_max - x_min, y_max - y_min, 300, 200);
+
+  // now, this is a bit silly... this can be done much better.
+  for (const auto& box : boxes)
+  {
+    uint32_t R = 0;
+    uint32_t G = 0;
+    uint32_t B = 0;
+    uint32_t total = 0;
+    for (const auto& sample : analyzed)
+    {
+      if (box.inside(sample.x - x_min, sample.y - y_min))
+      {
+        const uint32_t color = screen[sample.y][sample.x];
+        R += (color >> 16) & 0xFF;
+        G += (color >> 8) & 0xFF;
+        B += color & 0xFF;
+        total += 255;
+      }
+    }
+    if (total == 0)
+    {
+      std::cout << "box.index: " << box.index << std::endl;
+      std::cout << "  box.x_min: " << box.x_min << std::endl;
+      std::cout << "  box.x_max: " << box.x_max << std::endl;
+      std::cout << "  box.y_min: " << box.y_min << std::endl;
+      std::cout << "  box.y_max: " << box.y_max << std::endl;
+      continue;
+    }
+    R = R * 255 / total;
+    G = G * 255 / total;
+    B = B * 255 / total;
+    canvas[box.index].R = R;
+    canvas[box.index].G = G;
+    canvas[box.index].B = B;
+  }
+  return canvas;
 }

@@ -145,14 +145,33 @@ int main(int argc, char* argv[])
       
     size_t cumulative = 0;
     size_t count = 0;
+    std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
+
     while (1)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+      // Maintain designated frequency of 5 Hz (200 ms per frame)
+      a = std::chrono::system_clock::now();
+      std::chrono::duration<double, std::milli> work_time = a - b;
+
+      if (work_time.count() < 16.0)
+      {
+          std::chrono::duration<double, std::milli> delta_ms(16.0 - work_time.count());
+          auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
+          std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
+      }
+
+      b = std::chrono::system_clock::now();
+      std::chrono::duration<double, std::milli> sleep_time = b - a;
+
       tic();
       bool res = sniff.grabContent();
       sniff.content(content);
       //  auto content = sniff.content();
-      auto canvas = analyzer.contentToCanvas(content);
+      auto canvas = analyzer.sampledBoxer(content);
+      //  auto canvas = analyzer.contentToCanvas(content);
       //  printCanvas(canvas);
       limiter(canvas);
       write(serial, canvas);
@@ -160,8 +179,8 @@ int main(int argc, char* argv[])
       count++;
       if (res)
       {
-        std::cout << "Grab succesful" << std::endl;
-        std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
+        //  std::cout << "Grab succesful" << std::endl;
+        //  std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
         //  std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
     }

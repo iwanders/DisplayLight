@@ -7,6 +7,7 @@ FIND_PACKAGE(X11)
 add_compile_options(-Wall -Wextra -pedantic)
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
+#set(CMAKE_BUILD_TYPE Debug)
 
 add_library(pixelsniff pixelsniff.cpp)
 target_link_libraries(pixelsniff ${X11_LIBRARIES} )
