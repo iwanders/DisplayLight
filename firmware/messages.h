@@ -7,6 +7,10 @@ struct RGB
   uint8_t R;
   uint8_t G;
   uint8_t B;
+  uint32_t toUint32() const
+  {
+    return (R << 16) | (G << 8) | B;
+  }
 };
 
 enum MsgType : uint8_t

@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
     std::cout << "./" << argv[0] << " capture filename" << std::endl;
     std::cout << "./" << argv[0] << " analyze content_in ppm_out" << std::endl;
     std::cout << "./" << argv[0] << " process content_out ppm_out" << std::endl;
+    std::cout << "./" << argv[0] << " boxpacker content_in ppm_out" << std::endl;
     return 1;
   }
   PixelSniffer::Screen content;
@@ -42,6 +43,21 @@ int main(int argc, char* argv[])
     {
       content[sample.y][sample.x] = 0x00FF0000;
     }
+    std::ofstream outcontent(argv[3]);
+    outcontent << sniff.imageToPPM(content);
+    outcontent.close();
+  }
+
+  if (std::string(argv[1]) == "boxpacker")
+  {
+    content = sniff.readContents(argv[2]);
+    auto samples = analyzer.sampleCanvas(content, 8);
+    auto box_indices = analyzer.boxPacker(content, samples);
+    std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
+    bool res = analyzer.sampledBoxer(samples, box_indices, canvas);
+    std::cout << "Result: " << res << std::endl;
+    analyzer.boxColorizer(canvas, content);
+    
     std::ofstream outcontent(argv[3]);
     outcontent << sniff.imageToPPM(content);
     outcontent.close();

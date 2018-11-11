@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <cstdint>
+#include <sstream>
 #include "../firmware/messages.h"
 
 struct Sample
@@ -28,6 +29,12 @@ struct LedBox
   {
     return (x_min <= x) && (x <= x_max) && (y_min <= y) && (y <= y_max);
   };
+   operator std::string() const
+  {
+    std::stringstream ss;
+    ss << "<" << x_min << ", " << y_min << " - " << x_max << ", " << y_max << ">";
+    return ss.str();
+  }
 };
 
 class ScreenAnalyzer
@@ -36,9 +43,15 @@ class ScreenAnalyzer
   const size_t vertical_count_ { 73 };    //!< Number of cells in vertical direction.
   const size_t led_count_ { 228 };        //!< The number of leds in total.
 
+  const size_t horizontal_celldepth_ { 100 }; //!< The depth of the cells in horizontal direction.
+  const size_t vertical_celldepth_ { 100 }; //!< The depth of led cells in vertical direction.
+
 public:
+  size_t ledCount() const;
 
   std::vector<LedBox> getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth);
+
+  std::vector<LedBox> getBoxesForSamples(const std::vector<Sample>& samples, size_t& x_min, size_t& y_min);
 
   /**
    * @brief Averages a region of a the screen.
@@ -52,10 +65,22 @@ public:
    */
   std::vector<RGB> contentToCanvas(const std::vector<std::vector<std::uint32_t>>& screen);
 
+  /**
+   * @brief Sample the canvas, recursing down using a quadtree-like approach. This should find the contents save for
+   *        pure black borders.
+   */
   std::vector<Sample> sampleCanvas(const std::vector<std::vector<std::uint32_t>>& screen, const size_t max_level);
 
-  std::vector<RGB> sampledBoxer(const std::vector<std::vector<std::uint32_t>>& screen);
+  /**
+   * @brief Determine the mapping box each sample is associated with.
+   */
+  std::vector<std::vector<size_t>> boxPacker(const std::vector<std::vector<std::uint32_t>>& screen, const std::vector<Sample>& samples);
 
-  
+  /**
+   * 
+   */
+  bool sampledBoxer(const std::vector<Sample>& samples, const std::vector<std::vector<size_t>>& box_indices, std::vector<RGB>& canvas);
+
+  void boxColorizer(const std::vector<RGB>& canvas, std::vector<std::vector<std::uint32_t>>& screen);
 };
 #endif

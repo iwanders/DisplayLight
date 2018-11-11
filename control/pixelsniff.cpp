@@ -316,6 +316,7 @@ PixelSniffer::Screen PixelSniffer::readContents(const std::string& filename)
   ifs.close();
   return contents;
 }
+
 void PixelSniffer::writeContents(const std::string& filename, const Screen& contents)
 {
   std::ofstream fout;
