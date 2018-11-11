@@ -24,6 +24,7 @@ struct LedBox
   size_t x_max { 0 };
   size_t y_min { 0 };
   size_t y_max { 0 };
+  LedBox() = default;
   LedBox(size_t led_index, size_t xmin, size_t xmax, size_t ymin, size_t ymax): index{led_index}, x_min(xmin), x_max(xmax), y_min(ymin), y_max(ymax){};
   bool inside(size_t x, size_t y) const
   {
@@ -37,6 +38,12 @@ struct LedBox
   }
 };
 
+struct BoxedSamples
+{
+  LedBox box;
+  std::vector<std::pair<size_t, size_t>> points;
+};
+
 class ScreenAnalyzer
 {
   const size_t horizontal_count_ { 42 };  //!< Number of cells in horizontal direction.
@@ -47,40 +54,63 @@ class ScreenAnalyzer
   const size_t vertical_celldepth_ { 100 }; //!< The depth of led cells in vertical direction.
 
 public:
+  using Screen = std::vector<std::vector<uint32_t>>;
+  using BoxIndices = std::vector<std::vector<size_t>>;
+  using Samples = std::vector<Sample>;
+
   size_t ledCount() const;
 
   std::vector<LedBox> getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth);
 
+  /**
+   * @brief Create boxes that encompass the bounds defined by the min and max of the samples.
+   */
   std::vector<LedBox> getBoxesForSamples(const std::vector<Sample>& samples, size_t& x_min, size_t& y_min);
+
+  /**
+   * @brief Perform 4 bisection procedures to find the left, bottom, top and right borders.
+   */
+  void findBorders(const Screen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max);
+
+  /**
+   * @brief Make boxed samplepoints.
+   */
+  std::vector<BoxedSamples> makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min, const size_t y_min, const size_t x_max, const size_t y_max);
+
+  void sampleBoxedSamples(const Screen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas);
+  
 
   /**
    * @brief Averages a region of a the screen.
    * @param screen The content to average from.
    * @param xmin, ymin, xmax, ymax The bounds of the region to verage.
    */
-  RGB average(const std::vector<std::vector<std::uint32_t>>& screen, size_t xmin, size_t ymin, size_t xmax, size_t ymax);
+  RGB average(const Screen& screen, size_t xmin, size_t ymin, size_t xmax, size_t ymax);
 
   /**
    * @brief Converts a screen to a vector of cell colors using averaging.
    */
-  std::vector<RGB> contentToCanvas(const std::vector<std::vector<std::uint32_t>>& screen);
+  std::vector<RGB> contentToCanvas(const Screen& screen);
 
   /**
    * @brief Sample the canvas, recursing down using a quadtree-like approach. This should find the contents save for
    *        pure black borders.
    */
-  std::vector<Sample> sampleCanvas(const std::vector<std::vector<std::uint32_t>>& screen, const size_t max_level);
+  std::vector<Sample> sampleCanvas(const Screen& screen, const size_t max_level);
 
   /**
    * @brief Determine the mapping box each sample is associated with.
    */
-  std::vector<std::vector<size_t>> boxPacker(const std::vector<std::vector<std::uint32_t>>& screen, const std::vector<Sample>& samples);
+  std::vector<std::vector<size_t>> boxPacker(const Screen& screen, const std::vector<Sample>& samples);
 
   /**
    * 
    */
-  bool sampledBoxer(const std::vector<Sample>& samples, const std::vector<std::vector<size_t>>& box_indices, std::vector<RGB>& canvas);
+  bool sampledBoxer(const std::vector<Sample>& samples, const BoxIndices& box_indices, std::vector<RGB>& canvas);
 
-  void boxColorizer(const std::vector<RGB>& canvas, std::vector<std::vector<std::uint32_t>>& screen);
+  /**
+   * @brief Colorize the screen based on a canvas.
+   */
+  void boxColorizer(const std::vector<RGB>& canvas, Screen& screen);
 };
 #endif

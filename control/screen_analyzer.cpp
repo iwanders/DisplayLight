@@ -8,7 +8,7 @@ size_t ScreenAnalyzer::ledCount() const
   return led_count_;
 }
 
-RGB ScreenAnalyzer::average(const std::vector<std::vector<std::uint32_t>>& screen, size_t xmin, size_t ymin, size_t xmax, size_t ymax)
+RGB ScreenAnalyzer::average(const Screen& screen, size_t xmin, size_t ymin, size_t xmax, size_t ymax)
 {
   uint32_t R = 0;
   uint32_t G = 0;
@@ -93,7 +93,7 @@ std::vector<LedBox> ScreenAnalyzer::getBoxes(size_t width, size_t height, size_t
   }
   return res;
 }
-std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<std::uint32_t>>& screen)
+std::vector<RGB> ScreenAnalyzer::contentToCanvas(const Screen& screen)
 {
   auto canvas = std::vector<RGB>{led_count_, {0, 0, 0}};
   auto boxes = getBoxes(screen.front().size(), screen.size(), 300, 200);
@@ -107,7 +107,7 @@ std::vector<RGB> ScreenAnalyzer::contentToCanvas(const std::vector<std::vector<s
 }
 
 
-std::vector<Sample> ScreenAnalyzer::sampleCanvas(const std::vector<std::vector<std::uint32_t>>& screen, const size_t max_level)
+std::vector<Sample> ScreenAnalyzer::sampleCanvas(const Screen& screen, const size_t max_level)
 {
   const auto height = screen.size();
   const auto width = screen.front().size();
@@ -206,7 +206,7 @@ std::vector<LedBox> ScreenAnalyzer::getBoxesForSamples(const std::vector<Sample>
   return boxes;
 }
 
-std::vector<std::vector<size_t>> ScreenAnalyzer::boxPacker(const std::vector<std::vector<std::uint32_t>>& screen, const std::vector<Sample>& samples)
+std::vector<std::vector<size_t>> ScreenAnalyzer::boxPacker(const Screen& screen, const std::vector<Sample>& samples)
 {
   size_t x_min;
   size_t y_min;
@@ -272,12 +272,9 @@ bool ScreenAnalyzer::sampledBoxer(const std::vector<Sample>& samples, const std:
   return true;
 }
 
-void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, std::vector<std::vector<std::uint32_t>>& screen)
+void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, Screen& screen)
 {
-  auto samples = sampleCanvas(screen, 8);
-  size_t x_min;
-  size_t y_min;
-  auto boxes = getBoxesForSamples(samples, x_min, y_min);
+  auto boxes = getBoxes(screen.front().size(), screen.size(), 50, 50);
   // now that we have the boxes and the canvas, we can color each individual box.
   for (size_t box_i = 0; box_i < boxes.size(); box_i++)
   {
@@ -288,8 +285,128 @@ void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, std::vector<st
     {
       for (size_t x=box.x_min; x < box.x_max; x++)
       {
-        screen[y + y_min][x + x_min] = color.toUint32();
+        screen[y + 0][x + 0] = color.toUint32();
       }
     }
   }
+}
+
+void ScreenAnalyzer::findBorders(const Screen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max)
+{
+  x_min = 0;
+  x_max = screen.front().size()-1;
+  y_min = 0;
+  y_max = screen.size()-1;
+  size_t tmp = 0;
+
+  size_t mid_x = screen.front().size() / 2;
+  size_t mid_y = screen.size() / 2;
+
+  auto bisect = [](auto f, auto& min, auto& max)
+  {
+    auto upper = f(max);
+    auto lower = f(min);
+    while ((max - min > 2) && (upper != lower))
+    {
+      upper = f(max);
+      lower = f(min);
+      const auto midpoint = (max + min) / 2;
+      auto center = f(midpoint);
+      if (center != lower)
+      {
+        max = midpoint;
+      }
+      else
+      {
+        min = midpoint;
+      }
+    }
+  };
+
+  // Perform left bound
+  tmp = mid_x;
+  bisect([&](auto v) {
+      return screen[mid_y][v] != 0;
+    }, x_min, tmp);
+
+  // Perform right bound.
+  tmp = mid_x;
+  bisect([&](auto v) {
+      return screen[mid_y][v] != 0;
+    }, tmp, x_max);
+
+  // Perform lower bound.
+  tmp = mid_y;
+  bisect([&](size_t v) {
+      return screen[v][mid_x] != 0;
+    }, y_min, tmp);
+
+  // Perform upper bound.
+  tmp = mid_y;
+  bisect([&](auto v) {
+      return screen[v][mid_x] != 0;
+    }, tmp, y_max);
+}
+
+std::vector<BoxedSamples> ScreenAnalyzer::makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min, const size_t y_min, const size_t x_max, const size_t y_max)
+{
+  auto boxes = getBoxes(x_max - x_min, y_max - y_min, horizontal_celldepth_, vertical_celldepth_);
+  std::vector<BoxedSamples> res;
+  res.resize(boxes.size());
+  for (size_t i = 0; i < boxes.size(); i++)
+  {
+    const auto& box = res[i].box;
+    res[i].box = boxes[i];
+    
+    // now add samples.
+    for (size_t y = box.y_min; y < box.y_max ; y += dist_between_samples)
+    {
+      for (size_t x = box.x_min; x < box.x_max ; x += dist_between_samples)
+      {
+        if (box.inside(x, y))
+        {
+          res[i].points.emplace_back(x, y);
+        }
+        else
+        {
+          std::cout << "Cannot be!" << std::endl;
+        }
+      }
+    }
+  }
+  return res;
+}
+
+void ScreenAnalyzer::sampleBoxedSamples(const Screen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas)
+{
+  for (size_t box_i = 0; box_i < boxed_samples.size(); box_i++)
+  {
+    auto& box = boxed_samples[box_i];
+    auto& canvas_pixel = canvas[box_i];
+
+    uint32_t R = 0;
+    uint32_t G = 0;
+    uint32_t B = 0;
+    uint32_t total = 0;
+    for (const auto& p : box.points)
+    {
+      const uint32_t color = screen[p.second + y_min][p.first + x_min];
+      R += (color >> 16) & 0xFF;
+      G += (color >> 8) & 0xFF;
+      B += color & 0xFF;
+      total += 255;
+    }
+
+    if (total == 0)
+    {
+      //  std::cout << "box_i " << box_i << std::endl;
+      continue;
+    }
+    R = R * 255 / total;
+    G = G * 255 / total;
+    B = B * 255 / total;
+    canvas_pixel.R = R;
+    canvas_pixel.G = G;
+    canvas_pixel.B = B;
+  }  
 }

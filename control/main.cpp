@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   {
     boost::asio::io_service io;
     boost::asio::serial_port serial{ io, argv[1] };
-    serial.set_option(boost::asio::serial_port_base::baud_rate(115200));
+    serial.set_option(boost::asio::serial_port_base::baud_rate(1152000));
 
     while (0)
     {
@@ -148,6 +148,10 @@ int main(int argc, char* argv[])
     std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
 
+
+    using Bounds = std::tuple<size_t, size_t, size_t, size_t>;
+    std::map<Bounds, std::vector<BoxedSamples>> cache;
+    std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
     while (1)
     {
 
@@ -155,11 +159,15 @@ int main(int argc, char* argv[])
       // Maintain designated frequency of 5 Hz (200 ms per frame)
       a = std::chrono::system_clock::now();
       std::chrono::duration<double, std::milli> work_time = a - b;
+      //  const double frame_period = 5000.0;  //
+      //  const double frame_period = 100.0;  // 10 Hz
 
-      if (work_time.count() < 16.0)
+      const size_t frame_period = 16.0;  // 60 Hz
+      if (work_time.count() < frame_period)
       {
-          std::chrono::duration<double, std::milli> delta_ms(16.0 - work_time.count());
+          std::chrono::duration<double, std::milli> delta_ms(frame_period - work_time.count());
           auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
+          std::cout << "Sleeping for: " << delta_ms_duration.count() << std::endl;
           std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
       }
 
@@ -169,19 +177,41 @@ int main(int argc, char* argv[])
       tic();
       bool res = sniff.grabContent();
       sniff.content(content);
-      //  auto content = sniff.content();
-      auto canvas = analyzer.sampledBoxer(content);
-      //  auto canvas = analyzer.contentToCanvas(content);
-      //  printCanvas(canvas);
+      std::cout << "Grab: ";
+      toc(true);
+
+      tic();
+      //=================
+      // perform bisection.
+      Bounds current;
+      analyzer.findBorders(content, std::get<0>(current), std::get<1>(current), std::get<2>(current), std::get<3>(current));
+      // check if present in the cache.
+      if (cache.find(current) == cache.end())
+      {
+     
+        // not in the cache, quickly, make the box points.
+        cache[current] = analyzer.makeBoxedSamplePoints(10, std::get<0>(current), std::get<1>(current), std::get<2>(current), std::get<3>(current));   
+        std::cout << "Making boxed points." << ", " <<  std::get<0>(current)<< ", " <<  std::get<1>(current)<< ", " <<  std::get<2>(current)<< ", " <<  std::get<3>(current) << std::endl;
+        std::cout << "   Samples per cell: " << cache[current].front().points.size() << std::endl;
+      }
+
+      // perform the analyses.
+      analyzer.sampleBoxedSamples(content, std::get<0>(current), std::get<1>(current), cache[current], canvas);
+      cumulative += toc();
+      
+      //===============
       limiter(canvas);
       write(serial, canvas);
-      cumulative += toc();
       count++;
       if (res)
       {
-        //  std::cout << "Grab succesful" << std::endl;
-        //  std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
+        std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
         //  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        //  analyzer.boxColorizer(canvas, content);
+        //  std::ofstream outcontent("/tmp/lastframe.ppm");
+        //  outcontent << sniff.imageToPPM(content);
+        //  outcontent.close();
       }
     }
   }

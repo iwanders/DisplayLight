@@ -254,7 +254,7 @@ void PixelSniffer::content(Screen& res)
     for (size_t x = 0; x < width; x++)
     {
       uint32_t value = *reinterpret_cast<uint32_t*>(data + y * width * stride + x * stride);
-      res[y][x] = value;
+      res[y][x] = value & 0x00FFFFFF;
     }
   }
 }
