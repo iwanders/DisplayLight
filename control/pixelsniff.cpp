@@ -1,6 +1,7 @@
 
 #include "pixelsniff.h"
 #include <fstream>
+#include <chrono>
 
 WindowInfo::WindowInfo(Display* displayz, Window windowt, size_t levelt)
 {
@@ -201,7 +202,7 @@ bool PixelSniffer::grabContent()
   return bool{ximage_};
 }
 
-size_t PixelSniffer::imageWidth()
+size_t PixelSniffer::imageWidth() const
 {
   if (ximage_)
   {
@@ -209,7 +210,7 @@ size_t PixelSniffer::imageWidth()
   }
   return 0;
 }
-size_t PixelSniffer::imageHeight()
+size_t PixelSniffer::imageHeight() const
 {
   if (ximage_)
   {
@@ -243,94 +244,9 @@ uint32_t PixelSniffer::imagePixel(size_t x, size_t y)
   return 0;
 }
 
-void PixelSniffer::content(Screen& res)
+
+BackedScreen PixelSniffer::getScreen() const
 {
-  uint8_t* data = reinterpret_cast<uint8_t*>(ximage_->data);
-  const uint8_t stride = ximage_->bits_per_pixel / 8;
-  const uint32_t width = imageWidth();
-  const uint32_t height = imageHeight();
-  for (size_t y = 0; y < height; y++)
-  {
-    for (size_t x = 0; x < width; x++)
-    {
-      uint32_t value = *reinterpret_cast<uint32_t*>(data + y * width * stride + x * stride);
-      res[y][x] = value & 0x00FFFFFF;
-    }
-  }
-}
-
-PixelSniffer::Screen PixelSniffer::content()
-{
-  Screen res;
-  res.resize(imageHeight());
-  const uint32_t width = imageWidth();
-  const uint32_t height = imageHeight();
-  for (size_t y = 0; y < height; y++)
-  {
-    res[y].resize(width);
-  }
-  content(res);
-  return res;
-}
-
-std::string PixelSniffer::imageToPPM(const Screen& raster)
-{
-  std::stringstream ss;
-  ss << "P3\n";
-  ss << raster[0].size() << " " << raster.size() << "\n";
-  ss << "255\n";
-  ss << "# data now\n";
-  for (size_t y = 0; y < raster.size(); y++)
-  {
-    for (size_t x = 0; x < raster[y].size(); x++)
-    {
-      uint32_t color = raster[y][x];
-      const int red = (color >> 16) & 0xFF;
-      const int green = (color >> 8) & 0xFF;
-      const int blue = (color)&0xFF;
-      ss << "" << red << " "
-         << " " << green << " " << blue << " ";
-    }
-    ss << "\n";
-  }
-  return ss.str();
-}
-
-PixelSniffer::Screen PixelSniffer::readContents(const std::string& filename)
-{
-  std::ifstream ifs(filename, std::ios::binary|std::ios::ate);
-
-  size_t width = 0;
-  size_t height = 0;
-  Screen contents;
-  
-  ifs.seekg(0, std::ios::beg);
-  ifs.read(reinterpret_cast<char*>(&width), sizeof(width));
-  ifs.read(reinterpret_cast<char*>(&height), sizeof(height));
-  contents.resize(height);
-  for (auto& row : contents)
-  {
-    row.resize(width);
-    ifs.read(reinterpret_cast<char*>(row.data()), width * sizeof(contents.front()[0]));
-  }
-  ifs.close();
-  return contents;
-}
-
-void PixelSniffer::writeContents(const std::string& filename, const Screen& contents)
-{
-  std::ofstream fout;
-  fout.open(filename, std::ios::binary | std::ios::out);
-
-  size_t width = contents.front().size();
-  size_t height = contents.size();
-
-  fout.write(reinterpret_cast<const char*>(&width), sizeof(width));
-  fout.write(reinterpret_cast<const char*>(&height), sizeof(height));
-  for (auto& row : contents)
-  {
-    fout.write(reinterpret_cast<const char*>(row.data()), width * sizeof(row[0]));
-  }
-
-  fout.close();
+  auto screen = BackedScreen{ximage_};
+  return screen;
 }

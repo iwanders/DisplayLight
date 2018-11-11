@@ -71,8 +71,8 @@ int main(int argc, char* argv[])
   std::cout << "Width: " << sniff.imageWidth() << std::endl;
   std::cout << "Height: " << sniff.imageHeight() << std::endl;
 
-  auto content = sniff.content();
+  auto content = sniff.getScreen();
   std::ofstream outcontent("content.ppm");
-  outcontent << sniff.imageToPPM(content);
+  outcontent << content.imageToPPM();
   outcontent.close();
 }

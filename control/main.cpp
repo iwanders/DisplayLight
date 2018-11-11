@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
   sniff.populate();
   sniff.selectWindow(0);  // 0 is the root window.
   sniff.grabContent();
-  auto content = sniff.content();
+  //  auto content = sniff.content();
   // some helper functions
   auto start = std::chrono::steady_clock::now();
   auto tic = [&start]() { start = std::chrono::steady_clock::now(); };
@@ -162,23 +162,25 @@ int main(int argc, char* argv[])
       //  const double frame_period = 5000.0;  //
       //  const double frame_period = 100.0;  // 10 Hz
 
-      const size_t frame_period = 16.0;  // 60 Hz
+      //  const size_t frame_period = 16.0;  // 60 Hz
+      const size_t frame_period = 1000 / 30;  // 30 Hz
       if (work_time.count() < frame_period)
       {
           std::chrono::duration<double, std::milli> delta_ms(frame_period - work_time.count());
           auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
-          std::cout << "Sleeping for: " << delta_ms_duration.count() << std::endl;
+          //  std::cout << "Sleeping for: " << delta_ms_duration.count() << std::endl;
           std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
       }
 
       b = std::chrono::system_clock::now();
       std::chrono::duration<double, std::milli> sleep_time = b - a;
 
-      tic();
+      //  tic();
       bool res = sniff.grabContent();
-      sniff.content(content);
-      std::cout << "Grab: ";
-      toc(true);
+      //  sniff.content(content);
+      const auto content = sniff.getScreen();
+      //  std::cout << "Grab: " << res << "  ";
+      //  toc(true);
 
       tic();
       //=================
@@ -205,7 +207,7 @@ int main(int argc, char* argv[])
       count++;
       if (res)
       {
-        std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
+        //  std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
         //  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         //  analyzer.boxColorizer(canvas, content);

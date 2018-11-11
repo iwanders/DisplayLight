@@ -21,6 +21,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
+
+
+#include "backed_screen.h"
 struct WindowInfo
 {
   WindowInfo();
@@ -59,18 +62,17 @@ public:
 
   void setupCaptureArea(size_t x, size_t y, size_t width, size_t height);
 
-  size_t imageWidth();
-  size_t imageHeight();
+  size_t imageWidth() const;
+  size_t imageHeight() const;
   uint32_t imagePixel(size_t x, size_t y);
 
-  std::vector<std::vector<std::uint32_t>> content();
-  void content(std::vector<std::vector<std::uint32_t>>& content);
+  std::vector<std::vector<std::uint32_t>> content() const;
+  void content(std::vector<std::vector<std::uint32_t>>& content) const;
 
-  static std::string imageToPPM(const Screen& raster);
   std::vector<WindowInfo> windows_;
 
-  static Screen readContents(const std::string& filename);
-  static void writeContents(const std::string& filename, const Screen& contents);
+
+  BackedScreen getScreen() const;
 protected:
 
   Display* display_;

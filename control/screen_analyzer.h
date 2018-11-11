@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <sstream>
 #include "../firmware/messages.h"
+#include "backed_screen.h"
 
 struct Sample
 {
@@ -63,54 +64,21 @@ public:
   std::vector<LedBox> getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth);
 
   /**
-   * @brief Create boxes that encompass the bounds defined by the min and max of the samples.
-   */
-  std::vector<LedBox> getBoxesForSamples(const std::vector<Sample>& samples, size_t& x_min, size_t& y_min);
-
-  /**
-   * @brief Perform 4 bisection procedures to find the left, bottom, top and right borders.
-   */
-  void findBorders(const Screen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max);
-
-  /**
    * @brief Make boxed samplepoints.
    */
   std::vector<BoxedSamples> makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min, const size_t y_min, const size_t x_max, const size_t y_max);
 
-  void sampleBoxedSamples(const Screen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas);
-  
-
   /**
-   * @brief Averages a region of a the screen.
-   * @param screen The content to average from.
-   * @param xmin, ymin, xmax, ymax The bounds of the region to verage.
+   * @brief Perform 4 bisection procedures to find the left, bottom, top and right borders.
    */
-  RGB average(const Screen& screen, size_t xmin, size_t ymin, size_t xmax, size_t ymax);
+  void findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max);
 
-  /**
-   * @brief Converts a screen to a vector of cell colors using averaging.
-   */
-  std::vector<RGB> contentToCanvas(const Screen& screen);
 
-  /**
-   * @brief Sample the canvas, recursing down using a quadtree-like approach. This should find the contents save for
-   *        pure black borders.
-   */
-  std::vector<Sample> sampleCanvas(const Screen& screen, const size_t max_level);
-
-  /**
-   * @brief Determine the mapping box each sample is associated with.
-   */
-  std::vector<std::vector<size_t>> boxPacker(const Screen& screen, const std::vector<Sample>& samples);
-
-  /**
-   * 
-   */
-  bool sampledBoxer(const std::vector<Sample>& samples, const BoxIndices& box_indices, std::vector<RGB>& canvas);
+  void sampleBoxedSamples(const BackedScreen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas);
 
   /**
    * @brief Colorize the screen based on a canvas.
    */
-  void boxColorizer(const std::vector<RGB>& canvas, Screen& screen);
+  void boxColorizer(const std::vector<RGB>& canvas, BackedScreen& screen);
 };
 #endif
