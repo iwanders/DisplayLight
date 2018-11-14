@@ -17,6 +17,10 @@ Config config;
 elapsedMillis decay_last_event;
 elapsedMicros decay_interval;
 
+uint8_t r_gamma[256] = { 0 };
+uint8_t g_gamma[256] = { 0 };
+uint8_t b_gamma[256] = { 0 };
+
 void fill(int color=0)
 {
   for (int j=0; j < leds.numPixels(); j++)
@@ -47,6 +51,9 @@ void setup()
   config.decay_time_delay_ms = 1000;
   config.decay_interval_us = 1000;
   config.decay_amount = 1;
+  config.gamma_r = 1.0;
+  config.gamma_g = 1.3;
+  config.gamma_b = 1.6;
 
   // start doing stuff.
   leds.begin();
@@ -58,6 +65,9 @@ void setup()
   // reset counters.
   decay_last_event = 0;
   decay_interval = 0;
+
+  // Create the gamma tables
+  computeGammaTables();
 }
 
 void loopDecay()
@@ -110,6 +120,7 @@ void processCommand(const Message& msg)
 
     case CONFIG:
       config = msg.config;
+      computeGammaTables();
     break;
 
     case COLOR:
@@ -123,7 +134,10 @@ void processCommand(const Message& msg)
         // setting indivual colors
         for (uint16_t i = 0; i < sizeof(msg.color.color) / sizeof(msg.color.color[0]); i++)
         {
-          leds.setPixel(i + msg.color.offset, msg.color.color[i].R, msg.color.color[i].G, msg.color.color[i].B);
+          const uint8_t r_corrected = r_gamma[msg.color.color[i].R];
+          const uint8_t g_corrected = g_gamma[msg.color.color[i].G];
+          const uint8_t b_corrected = b_gamma[msg.color.color[i].B];
+          leds.setPixel(i + msg.color.offset, r_corrected, g_corrected, b_corrected);
         }
       }
       // If set, then show the leds.
@@ -158,3 +172,17 @@ void loop()
   loopSerial();
 }
 
+void createGammaTable(uint8_t* table, float gamma)
+{
+  for (uint32_t i = 0; i < 256; i++)
+  {
+    table[i] = pow(static_cast<float>(i) / 256.0, gamma) * 256.0 + 0.5;
+  }
+}
+
+void computeGammaTables()
+{
+  createGammaTable(r_gamma, config.gamma_r);
+  createGammaTable(g_gamma, config.gamma_g);
+  createGammaTable(b_gamma, config.gamma_b);
+}

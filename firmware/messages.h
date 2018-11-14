@@ -25,6 +25,9 @@ struct Config
   uint32_t decay_time_delay_ms;  // 0 is disabled.
   uint32_t decay_interval_us;
   uint32_t decay_amount;
+  float gamma_r;
+  float gamma_g;
+  float gamma_b;
 };
 
 struct ColorData
