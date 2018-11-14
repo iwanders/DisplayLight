@@ -53,6 +53,12 @@ int main(int argc, char* argv[])
     analyzer.sampleBoxedSamples(screen, x_min, y_min, box_points, canvas);
 
     analyzer.boxColorizer(canvas, screen);
+
+    screen.hLine(y_min, 0x00FF0000);
+    screen.hLine(y_max, 0x0000FF00);
+    screen.vLine(x_min, 0x000000FF);
+    screen.vLine(x_max, 0x00FF00FF);
+
     std::ofstream outcontent(argv[3]);
     outcontent << screen.imageToPPM();
     outcontent.close();

@@ -70,6 +70,21 @@ void BackedScreen::setPixel(size_t x, size_t y, uint32_t pix)
   map_[y][x] = pix;
 }
 
+void BackedScreen::hLine(size_t y, uint32_t pix)
+{
+  for (size_t i = 0; i < getWidth(); i++)
+  {
+    setPixel(i, y, pix);
+  }
+}
+
+void BackedScreen::vLine(size_t x, uint32_t pix)
+{
+  for (size_t i = 0; i < getHeight(); i++)
+  {
+    setPixel(x, i, pix);
+  }
+}
 
 
 std::string BackedScreen::imageToPPM()

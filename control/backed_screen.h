@@ -46,6 +46,8 @@ public:
 
   void setPixel(size_t x, size_t y, uint32_t pix);
 
+  void hLine(size_t y, uint32_t pix);
+  void vLine(size_t x, uint32_t pix);
 
   void writeContents(const std::string& filename);
   std::string imageToPPM();

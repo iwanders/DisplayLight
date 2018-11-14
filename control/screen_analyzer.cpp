@@ -1,7 +1,7 @@
 #include "screen_analyzer.h"
 #include <iostream>
 #include <limits>
-
+#include <algorithm>
 
 size_t ScreenAnalyzer::ledCount() const
 {
@@ -88,16 +88,12 @@ void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, BackedScreen& 
   }
 }
 
-void ScreenAnalyzer::findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max)
+void ScreenAnalyzer::findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max, size_t bisects_per_side)
 {
-  x_min = 0;
-  x_max = screen.getWidth() - 1;
-  y_min = 0;
-  y_max = screen.getHeight() - 1;
-  size_t tmp = 0;
-
-  size_t mid_x = x_max / 2;
-  size_t mid_y = y_max / 2;
+  std::vector<size_t> x_min_v(bisects_per_side, 0);
+  std::vector<size_t> x_max_v(bisects_per_side, screen.getWidth() - 1);
+  std::vector<size_t> y_min_v(bisects_per_side, 0);
+  std::vector<size_t> y_max_v(bisects_per_side, screen.getHeight() - 1);
 
   auto bisect = [](auto f, auto& min, auto& max)
   {
@@ -120,29 +116,41 @@ void ScreenAnalyzer::findBorders(const BackedScreen& screen, size_t& x_min, size
     }
   };
 
-  // Perform left bound
-  tmp = mid_x;
-  bisect([&](auto v) {
-      return screen.pixel(v, mid_y) != 0;
-    }, x_min, tmp);
 
-  // Perform right bound.
-  tmp = mid_x;
-  bisect([&](auto v) {
-      return screen.pixel(v, mid_y) != 0;
-    }, tmp, x_max);
+  for (size_t i = 0 ; i < bisects_per_side; i++)
+  {
+    size_t tmp = 0;
+    size_t mid_y = (screen.getHeight() - 1) / (bisects_per_side + 1) * (i + 1);
+    size_t mid_x = (screen.getWidth() - 1) / (bisects_per_side + 1) * (i + 1);
+      
+    // Perform left bound
+    tmp = mid_x;
+    bisect([&](auto v) {
+        return screen.pixel(v, mid_y) != 0;
+      }, x_min_v[i], tmp);
 
-  // Perform lower bound.
-  tmp = mid_y;
-  bisect([&](size_t v) {
-      return screen.pixel(mid_x, v) != 0;
-    }, y_min, tmp);
+    // Perform right bound.
+    tmp = mid_x;
+    bisect([&](auto v) {
+        return screen.pixel(v, mid_y) != 0;
+      }, tmp, x_max_v[i]);
 
-  // Perform upper bound.
-  tmp = mid_y;
-  bisect([&](auto v) {
-      return screen.pixel(mid_x, v) != 0;
-    }, tmp, y_max);
+    // Perform lower bound.
+    tmp = mid_y;
+    bisect([&](size_t v) {
+        return screen.pixel(mid_x, v) != 0;
+      }, y_min_v[i], tmp);
+
+    // Perform upper bound.
+    tmp = mid_y;
+    bisect([&](auto v) {
+        return screen.pixel(mid_x, v) != 0;
+      }, tmp, y_max_v[i]);
+  }
+  x_min = *std::min_element(x_min_v.begin(), x_min_v.end());
+  y_min = *std::min_element(y_min_v.begin(), y_min_v.end());
+  x_max = *std::max_element(x_max_v.begin(), x_max_v.end());
+  y_max = *std::max_element(y_max_v.begin(), y_max_v.end());
 }
 
 std::vector<BoxedSamples> ScreenAnalyzer::makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min, const size_t y_min, const size_t x_max, const size_t y_max)

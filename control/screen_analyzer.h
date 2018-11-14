@@ -51,8 +51,8 @@ class ScreenAnalyzer
   const size_t vertical_count_ { 73 };    //!< Number of cells in vertical direction.
   const size_t led_count_ { 228 };        //!< The number of leds in total.
 
-  const size_t horizontal_celldepth_ { 100 }; //!< The depth of the cells in horizontal direction.
-  const size_t vertical_celldepth_ { 100 }; //!< The depth of led cells in vertical direction.
+  const size_t horizontal_celldepth_ { 200 }; //!< The depth of the cells in horizontal direction.
+  const size_t vertical_celldepth_ { 200 }; //!< The depth of led cells in vertical direction.
 
 public:
   using Screen = std::vector<std::vector<uint32_t>>;
@@ -69,9 +69,9 @@ public:
   std::vector<BoxedSamples> makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min, const size_t y_min, const size_t x_max, const size_t y_max);
 
   /**
-   * @brief Perform 4 bisection procedures to find the left, bottom, top and right borders.
+   * @brief Perform bisection procedures to find the left, bottom, top and right borders.
    */
-  void findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max);
+  void findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max, size_t bisects_per_side=4);
 
 
   void sampleBoxedSamples(const BackedScreen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas);
