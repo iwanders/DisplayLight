@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[])
 {
-  // some helper functions
+  // Some helper functions for timing.
   auto start = std::chrono::steady_clock::now();
   auto tic = [&start]() { start = std::chrono::steady_clock::now(); };
   auto toc = [&start](bool print = false) {
@@ -22,57 +22,65 @@ int main(int argc, char* argv[])
   PixelSniffer sniff;
   sniff.connect();
   sniff.populate();
-  size_t target_index = 0;
-  for (size_t i = 0; i < std::min<size_t>(1500, sniff.windows_.size()); i++)
-  {
-    const auto& window = sniff.windows_[i];
-    for (size_t j = 0; j < window.level; j++)
-    {
-      std::cout << " ";
-    }
-    std::cout << i << " " << window.name << " " << window.width << "x" << window.height;
-    auto wmclass = window.window_info.find("WM_CLASS");
-    if (wmclass != window.window_info.end())
-    {
-      std::cout << " " << (*wmclass).second << std::endl;
-    }
-    auto zzz = window.window_info.find("_NET_WM_PID");
-    if (zzz != window.window_info.end())
-    {
-      uint32_t pid = (zzz->second[0] & 0xFF) + ((zzz->second[1] & 0xFF) << 8);
-      std::cout << "Pid: " << pid;
-    }
-    std::cout << std::endl;
-    for (const auto& it : window.window_info)
-    {
-    }
-  }
-  // target_index = 199;
 
-  // target_index++;
-  std::cout << "Grabbing: " << target_index << std::endl;
-  sniff.selectWindow(target_index);
-  bool res;
-  size_t count = 500;
-  size_t cumulative = 0;
-  for (size_t c = 0; c < count; c++)
+  if (argc < 2)
   {
-    tic();
-    res = sniff.grabContent();
-    if (!res)
+    std::cout << "" << argv[0] << " benchmark" << std::endl;
+    std::cout << "" << argv[0] << " grabwindow string_in_title [content.ppm]" << std::endl;
+    return 1;
+  }
+
+  if ((std::string(argv[1]) == "benchmark"))
+  {
+    size_t target_index = 0;
+    sniff.selectWindow(0);
+    size_t count = 1000;
+    size_t cumulative = 0;
+    for (size_t c = 0; c < count; c++)
+    {
+      tic();
+      bool res = sniff.grabContent();
+      if (!res)
+      {
+        std::cerr << "Failed to grab" << std::endl;
+      }
+      cumulative += toc();
+    }
+    std::cout << "Captures done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
+  }
+
+  if ((std::string(argv[1]) == "grabwindow"))
+  {
+    std::string needle = std::string(argv[2]);
+    bool found_window = false;
+    for (const auto& window: sniff.getWindows())
+    {
+      if (window.name.find(needle) != std::string::npos)
+      {
+        std::cout << "Found window matching: " << needle << std::endl;
+        std::cout << "  title: " << window.name  << " " << window.width << ", " << window.height << std::endl;
+        sniff.selectWindow(window);
+        found_window = true;
+        break;
+      }
+    }
+    if (!found_window)
+    {
+      std::cout << "Could not find any window with " << needle << " in the name." << std::endl;
+      return 1;
+    }
+    if (!sniff.grabContent())
     {
       std::cerr << "Failed to grab" << std::endl;
     }
-    cumulative += toc();
+    auto content = sniff.getScreen();
+    std::string output_ppm = "window.ppm";
+    if (argc == 4)
+    {
+      output_ppm = argv[3];
+    }
+    std::ofstream outcontent(output_ppm);
+    outcontent << content.imageToPPM();
+    outcontent.close();
   }
-  std::cout << "iters done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
-
-  std::cout << "Grab result: " << res << std::endl;
-  std::cout << "Width: " << sniff.imageWidth() << std::endl;
-  std::cout << "Height: " << sniff.imageHeight() << std::endl;
-
-  auto content = sniff.getScreen();
-  std::ofstream outcontent("content.ppm");
-  outcontent << content.imageToPPM();
-  outcontent.close();
 }

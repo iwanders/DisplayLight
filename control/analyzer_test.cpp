@@ -17,7 +17,6 @@ int main(int argc, char* argv[])
     std::cout << "./" << argv[0] << " borderbisect content_in ppm_out" << std::endl;
     return 1;
   }
-  PixelSniffer::Screen content;
 
   if ((std::string(argv[1]) == "capture"))
   {

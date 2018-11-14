@@ -3,17 +3,17 @@
 #include <fstream>
 #include <chrono>
 
-WindowInfo::WindowInfo(Display* displayz, Window windowt, size_t levelt)
+WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
 {
-  level = levelt;
-  display = displayz;
-  window = windowt;
+  level = level_in;
+  display = display_in;
+  window = window_in;
   int atom_length = 0;
   auto properties = XListProperties(display, window, &atom_length);
 
   // use thse short hand to grab the window name.
   XTextProperty window_name;
-  int status = XGetWMName(display, windowt, &window_name);
+  int status = XGetWMName(display, window_in, &window_name);
   if (status && window_name.value)
   {
     name = std::string(reinterpret_cast<const char*>(window_name.value));
@@ -52,7 +52,7 @@ void WindowInfo::getResolution()
   height = height_return;
 }
 
-void recurseWindows(Display* display, Window root_window, std::vector<WindowInfo>& window_info, size_t level)
+void PixelSniffer::recurseWindows(Display* display, Window root_window, std::vector<WindowInfo>& window_info, size_t level)
 {
   window_info.push_back(WindowInfo(display, root_window, level));
   level++;
@@ -74,15 +74,11 @@ void recurseWindows(Display* display, Window root_window, std::vector<WindowInfo
   XFree(children);
 }
 
-std::vector<WindowInfo> recuseWindows(Display* display, Window root_window)
+std::vector<WindowInfo> PixelSniffer::recuseWindows(Display* display, Window root_window)
 {
   std::vector<WindowInfo> res;
   recurseWindows(display, root_window, res, 0);
   return res;
-}
-
-void getRoot(Display*& display, Window& root_window)
-{
 }
 
 // ugh, legacy stuff is legacy.
@@ -117,10 +113,6 @@ void PixelSniffer::connect()
   {
     throw std::runtime_error("XShmQueryExtension needs to be available.");
   }
-
-  cmap_ = DefaultColormap(display_, DefaultScreen(display_));
-
-
 }
 
 void PixelSniffer::populate()
@@ -134,9 +126,9 @@ void PixelSniffer::populate()
   }
 }
 
-void PixelSniffer::cleanImage()
+std::vector<WindowInfo> PixelSniffer::getWindows() const
 {
-  ximage_.reset();
+  return windows_;
 }
 
 bool PixelSniffer::selectWindow(size_t index)
@@ -145,8 +137,13 @@ bool PixelSniffer::selectWindow(size_t index)
   {
     return false;
   }
+  return selectWindow(windows_[index]);
+}
 
-  auto& window = windows_[index].window;
+bool PixelSniffer::selectWindow(const WindowInfo& window_info)
+{
+  auto& window = window_info.window;
+  window_ = window_info;
 
   // https://tronche.com/gui/x/xlib/window-information/XGetWindowAttributes.html
   // Colormap for a window seems to be different than for the root?
@@ -158,8 +155,8 @@ bool PixelSniffer::selectWindow(size_t index)
   }
 
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
-  attributes.depth, ZPixmap, NULL, &shminfo_,
-  attributes.width, attributes.height), [](auto z){});
+    attributes.depth, ZPixmap, NULL, &shminfo_,
+    attributes.width, attributes.height), [](auto z){});
 
   shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
   ximage_->data = static_cast<char*>(shmat(shminfo_.shmid, 0, 0));
@@ -168,9 +165,6 @@ bool PixelSniffer::selectWindow(size_t index)
 
   XShmAttach(display_, &shminfo_);
 
-  cmap_ = attributes.colormap;
-  window_index_ = index;
-  window_ = windows_[index];
   std::cout << "width: " << attributes.width << "heigh: " << attributes.height << std::endl;
   setupCaptureArea(0, 0, attributes.width, attributes.height);
 }
@@ -239,7 +233,6 @@ uint32_t PixelSniffer::imagePixel(size_t x, size_t y)
     const uint8_t& b = *(reinterpret_cast<uint8_t*>(&color.pixel) + 0);
 
     return (r << 16) + (g << 8) + b;
-    // return color.pixel;
   }
   return 0;
 }
