@@ -45,9 +45,11 @@ struct WindowInfo
   Display* display;  //!< Pointer to the current display.
   std::map<std::string, std::string> window_info;  //!< String representation of the windows' properties.
 
-  void getResolution();  //!< Retrieve the windows resolution.
   size_t width;  //!< Window width
   size_t height; //!< Window height
+
+private:
+  void getResolution();  //!< Retrieve the windows resolution.
 };
 
 
@@ -74,23 +76,6 @@ public:
    */
   bool grabContent();
 
-  void setupCaptureArea(size_t x, size_t y, size_t width, size_t height);
-
-  /**
-   * @brief Get the current image width.
-   */
-  size_t imageWidth() const;
-
-  /**
-   * @brief Get the current image height.
-   */
-  size_t imageHeight() const;
-
-  /**
-   * @brief Retrieve one pixel from the current image.
-   */
-  uint32_t imagePixel(size_t x, size_t y);
-
   /**
    * @brief Return a BackedScreen instance that is backed by the current image in the pixelsniffer.
    */
@@ -106,6 +91,15 @@ public:
    */
   std::vector<WindowInfo> getWindows() const;
 
+  /**
+   * @brief Prepares the capture area in the window.
+   * @param x The x coordinate in the window (starts left)
+   * @param y The y coordinate in the window (starts top)
+   * @param width The width of segment to receive, if 0 the window width if used.
+   * @param height The height of segment to receive, if 0 the window height if used.
+   */
+  bool prepareCapture(size_t x, size_t y, size_t width, size_t height);
+
 protected:
   Display* display_;  //!< Pointer to the current X display.
   std::shared_ptr<XImage> ximage_;  //!< Pointer to ximage representing data.
@@ -114,10 +108,11 @@ protected:
 
   WindowInfo window_;  //!< The current window we are grabbing from.
 
-  size_t x_, y_, width_, height_;
+  size_t capture_x_;
+  size_t capture_y_;
+  
 
   std::vector<WindowInfo> windows_;
-
   /**
    * @brief Function to recurse down the window tree, populating the window information structs.
    */

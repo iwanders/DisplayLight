@@ -23,10 +23,6 @@ int main(int argc, char* argv[])
     size_t target_index = 0;
     sniff.selectWindow(0);
     bool res = sniff.grabContent();
-    std::cout << "Grab result: " << res << std::endl;
-    std::cout << "Width: " << sniff.imageWidth() << std::endl;
-    std::cout << "Height: " << sniff.imageHeight() << std::endl;
-
     auto screen = sniff.getScreen();
     screen.writeContents(argv[2]);
   }

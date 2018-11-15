@@ -145,18 +145,35 @@ bool PixelSniffer::selectWindow(const WindowInfo& window_info)
   auto& window = window_info.window;
   window_ = window_info;
 
+  return prepareCapture(0, 0, 0, 0);
+}
+
+bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
+{
   // https://tronche.com/gui/x/xlib/window-information/XGetWindowAttributes.html
   // Colormap for a window seems to be different than for the root?
   XWindowAttributes attributes;
-  int status = XGetWindowAttributes(display_, window, &attributes);
+  int status = XGetWindowAttributes(display_, window_.window, &attributes);
   if (!status)
   {
     return false;
   }
 
+  if (width == 0)
+  {
+    width = attributes.width;
+  }
+  width = std::min<size_t>(width, attributes.width);
+
+  if (height == 0)
+  {
+    height = attributes.height;
+  }
+  height = std::min<size_t>(height, attributes.height);
+
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
     attributes.depth, ZPixmap, NULL, &shminfo_,
-    attributes.width, attributes.height), [](auto z){});
+    width, height), [](auto z){});
 
   shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
   ximage_->data = static_cast<char*>(shmat(shminfo_.shmid, 0, 0));
@@ -165,78 +182,26 @@ bool PixelSniffer::selectWindow(const WindowInfo& window_info)
 
   XShmAttach(display_, &shminfo_);
 
-  std::cout << "width: " << attributes.width << "heigh: " << attributes.height << std::endl;
-  setupCaptureArea(0, 0, attributes.width, attributes.height);
-}
-
-void PixelSniffer::setupCaptureArea(size_t x, size_t y, size_t width, size_t height)
-{
-  x_ = x;
-  y_ = y;
-  width_ = width;
-  height_ = height;
+  capture_x_ = x;
+  capture_y_ = y;
 }
 
 bool PixelSniffer::grabContent()
 {
-  XMapWindow(display_, window_.window);
-  XMapRaised(display_, window_.window);
+  // Probably don't need to map them...
+  //  XMapWindow(display_, window_.window);
+  //  XMapRaised(display_, window_.window);
   try
   {
-    //  XImage* ximage = nullptr;
-    //  XShmGetImage(display_, window_.window, _xImage, _cropLeft, _cropTop, AllPlanes);
-    //  XImage* ximage = XGetImage(display_, window_.window, x_, y_, width_, height_, AllPlanes, ZPixmap);
-    //  ximage_.reset(ximage, [](auto im){XDestroyImage(im);});
-    XShmGetImage(display_, window_.window, ximage_.get(), 0, 0, AllPlanes);
+    XShmGetImage(display_, window_.window, ximage_.get(), capture_x_, capture_y_, AllPlanes);
   }
   catch (const std::runtime_error& e)
   {
     std::cout << "Caught exception in " << __PRETTY_FUNCTION__ << ": " << e.what() << std::endl;
+    return false;
   }
-  return bool{ximage_};
+  return true;
 }
-
-size_t PixelSniffer::imageWidth() const
-{
-  if (ximage_)
-  {
-    return ximage_->width;
-  }
-  return 0;
-}
-size_t PixelSniffer::imageHeight() const
-{
-  if (ximage_)
-  {
-    return ximage_->height;
-  }
-  return 0;
-}
-
-uint32_t PixelSniffer::imagePixel(size_t x, size_t y)
-{
-  XColor color;
-  if ((x < imageWidth()) && (y < imageHeight()))
-  {
-    color.pixel = XGetPixel(ximage_.get(), x, y);
-
-    // this query here is actually not really necessary... it's just ARGB
-    /*
-    XQueryColor(display_, cmap_, &color);
-    uint8_t r = (color.red >> 8);
-    uint8_t g = (color.green >> 8);
-    uint8_t b = (color.blue >> 8);
-    */
-    const uint8_t& a = *(reinterpret_cast<uint8_t*>(&color.pixel) + 3);
-    const uint8_t& r = *(reinterpret_cast<uint8_t*>(&color.pixel) + 2);
-    const uint8_t& g = *(reinterpret_cast<uint8_t*>(&color.pixel) + 1);
-    const uint8_t& b = *(reinterpret_cast<uint8_t*>(&color.pixel) + 0);
-
-    return (r << 16) + (g << 8) + b;
-  }
-  return 0;
-}
-
 
 BackedScreen PixelSniffer::getScreen() const
 {

@@ -27,9 +27,11 @@ int main(int argc, char* argv[])
   {
     std::cout << "" << argv[0] << " benchmark" << std::endl;
     std::cout << "" << argv[0] << " grabwindow string_in_title [content.ppm]" << std::endl;
+    std::cout << "" << argv[0] << " grabpart string_in_title [content.ppm] x y w h " << std::endl;
     return 1;
   }
 
+  // Benchmark capturing the root window.
   if ((std::string(argv[1]) == "benchmark"))
   {
     size_t target_index = 0;
@@ -49,7 +51,8 @@ int main(int argc, char* argv[])
     std::cout << "Captures done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
   }
 
-  if ((std::string(argv[1]) == "grabwindow"))
+  // Try grabbing just one window.
+  if ((std::string(argv[1]) == "grabwindow") || (std::string(argv[1]) == "grabpart"))
   {
     std::string needle = std::string(argv[2]);
     bool found_window = false;
@@ -60,6 +63,19 @@ int main(int argc, char* argv[])
         std::cout << "Found window matching: " << needle << std::endl;
         std::cout << "  title: " << window.name  << " " << window.width << ", " << window.height << std::endl;
         sniff.selectWindow(window);
+        if (std::string(argv[1]) == "grabpart")
+        {
+          if (argc < 8)
+          {
+            std::cout << "" << argv[0] << " grabpart string_in_title [content.ppm] x y w h " << std::endl;
+            return 1;
+          }
+          int x = std::atoi(argv[4]);
+          int y = std::atoi(argv[5]);
+          int w = std::atoi(argv[6]);
+          int h = std::atoi(argv[7]);
+          sniff.prepareCapture(x, y, w, h);
+        }
         found_window = true;
         break;
       }
@@ -75,7 +91,7 @@ int main(int argc, char* argv[])
     }
     auto content = sniff.getScreen();
     std::string output_ppm = "window.ppm";
-    if (argc == 4)
+    if (argc >= 4)
     {
       output_ppm = argv[3];
     }
