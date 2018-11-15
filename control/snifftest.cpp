@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
 
   PixelSniffer sniff;
   sniff.connect();
-  sniff.populate();
 
   if (argc < 2)
   {
@@ -35,7 +34,7 @@ int main(int argc, char* argv[])
   if ((std::string(argv[1]) == "benchmark"))
   {
     size_t target_index = 0;
-    sniff.selectWindow(0);
+    sniff.selectRootWindow();
     size_t count = 1000;
     size_t cumulative = 0;
     for (size_t c = 0; c < count; c++)

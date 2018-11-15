@@ -31,7 +31,7 @@
  */
 struct WindowInfo
 {
-  WindowInfo();
+  WindowInfo() = default;
   /**
    * @brief Constructor that retrieves relevant information about the window.
    */
@@ -41,12 +41,11 @@ struct WindowInfo
   std::string name;  //!< Window name.
   size_t level;  //!< level of recursion this window was found at.
 
-
-  Display* display;  //!< Pointer to the current display.
   std::map<std::string, std::string> window_info;  //!< String representation of the windows' properties.
 
   size_t width;  //!< Window width
   size_t height; //!< Window height
+  Display* display;  //!< Pointer to the current display.
 
 private:
   void getResolution();  //!< Retrieve the windows resolution.
@@ -58,33 +57,33 @@ class PixelSniffer
 public:
   PixelSniffer();
 
-
   /**
    * @brief Connect the X context, get display pointer. Check if the shared memory extension is present.
    */
   void connect();
 
   /**
-   * @brief Select a window from the window list.
+   * @brief Select the root window to capture from.
    * @return False if an error occured.
    */
-  bool selectWindow(size_t index);
+  bool selectRootWindow();
+
+  /**
+   * @brief Select a specific window to capture from, use getWindows() to obtain a list of input arguments.
+   * @return False if an error occured.
+   */
   bool selectWindow(const WindowInfo& window);
 
   /**
    * @brief Grab a snapshot of the windows' context.
    */
-  bool grabContent();
+  bool grabContent() const;
 
   /**
    * @brief Return a BackedScreen instance that is backed by the current image in the pixelsniffer.
+   * @return A screen backed by the shared XImage in this class.
    */
   BackedScreen getScreen() const;
-
-  /**
-   * @brief Populate the window list.
-   */
-  void populate();
 
   /**
    * @brief Return the current list of windows that are known.
@@ -105,14 +104,11 @@ protected:
   std::shared_ptr<XImage> ximage_;  //!< Pointer to ximage representing data.
   XShmSegmentInfo shminfo_;  //!< Context for the shared memory extnesion.
   Window root_window_;  //!< The root window of the X display.
+  Window window_;  //!< The current window we are grabbing from.
 
-  WindowInfo window_;  //!< The current window we are grabbing from.
-
-  size_t capture_x_;
-  size_t capture_y_;
+  size_t capture_x_; //!< The x position to grab from.
+  size_t capture_y_; //!< The y position to grab from.
   
-
-  std::vector<WindowInfo> windows_;
   /**
    * @brief Function to recurse down the window tree, populating the window information structs.
    */

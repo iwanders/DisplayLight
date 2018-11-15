@@ -1,6 +1,7 @@
 
 #include "pixelsniff.h"
 #include <fstream>
+#include <sstream>
 #include <chrono>
 
 WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
@@ -19,6 +20,7 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
     name = std::string(reinterpret_cast<const char*>(window_name.value));
   }
 
+  // Iterate over all atoms populate the attribute map.
   for (size_t i = 0; i < atom_length; i++)
   {
     char* name = nullptr;
@@ -31,12 +33,8 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
       window_info[std::string(name)] = std::string(reinterpret_cast<const char*>(label.value));
     }
   }
-  XFree(properties);  // this is populated with a pointer and magic... clean.
+  XFree(properties);  // Clean up the properties correctly.
   getResolution();
-}
-
-WindowInfo::WindowInfo()
-{
 }
 
 void WindowInfo::getResolution()
@@ -81,20 +79,16 @@ std::vector<WindowInfo> PixelSniffer::recuseWindows(Display* display, Window roo
   return res;
 }
 
-// ugh, legacy stuff is legacy.
+/**
+ * @brief Static free function used to register as an X error handler.
+ *        this function always throws on an error.
+ */
 static int handleError(Display* display, XErrorEvent* error)
 {
-  std::cout << "error: " << error->error_code << std::endl;
-  std::array<char, 10000> buffer;
-  int length = 0;
-  XGetErrorText(display, error->error_code, buffer.data(), length);
+  std::array<char, 4096> buffer;
+  XGetErrorText(display, error->error_code, buffer.data(), buffer.size());
   std::string error_str{ buffer.data() };
-  std::cout << "Error: " << error_str << std::endl;
-  if ((error->error_code == BadAlloc) || (error->error_code == BadAccess))
-  {
-    std::cerr << "Baaaaad";
-  }
-  throw std::runtime_error("Foo");
+  throw std::runtime_error(error_str);
 }
 
 PixelSniffer::PixelSniffer()
@@ -104,7 +98,6 @@ PixelSniffer::PixelSniffer()
 
 void PixelSniffer::connect()
 {
-
   display_ = XOpenDisplay(nullptr);
   root_window_ = XRootWindow(display_, XDefaultScreen(display_));
   int dummy, pixmaps_supported;
@@ -115,37 +108,21 @@ void PixelSniffer::connect()
   }
 }
 
-void PixelSniffer::populate()
-{
-  auto windows = recuseWindows(display_, root_window_);
-  for (const auto& window : windows)
-  {
-    {
-      windows_.push_back(window);
-    }
-  }
-}
-
 std::vector<WindowInfo> PixelSniffer::getWindows() const
 {
-  return windows_;
+  return recuseWindows(display_, root_window_);
 }
 
-bool PixelSniffer::selectWindow(size_t index)
+bool PixelSniffer::selectRootWindow()
 {
-  if (index >= windows_.size())
-  {
-    return false;
-  }
-  return selectWindow(windows_[index]);
+  window_ = root_window_;
+  return prepareCapture(0, 0, 0, 0);  // default to entire screen.
 }
 
 bool PixelSniffer::selectWindow(const WindowInfo& window_info)
 {
-  auto& window = window_info.window;
-  window_ = window_info;
-
-  return prepareCapture(0, 0, 0, 0);
+  window_ = window_info.window;
+  return prepareCapture(0, 0, 0, 0);  // default to entire window.
 }
 
 bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
@@ -153,12 +130,13 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   // https://tronche.com/gui/x/xlib/window-information/XGetWindowAttributes.html
   // Colormap for a window seems to be different than for the root?
   XWindowAttributes attributes;
-  int status = XGetWindowAttributes(display_, window_.window, &attributes);
+  int status = XGetWindowAttributes(display_, window_, &attributes);
   if (!status)
   {
     return false;
   }
 
+  // Handle inputs.
   if (width == 0)
   {
     width = attributes.width;
@@ -171,29 +149,36 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   }
   height = std::min<size_t>(height, attributes.height);
 
+  x = std::min<size_t>(x, attributes.width);
+  y = std::min<size_t>(y, attributes.height);
+
+  // Create an XImage we'll write to.
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
     attributes.depth, ZPixmap, NULL, &shminfo_,
     width, height), [](auto z){});
 
+  // Initialise the shared memory information.
   shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
   ximage_->data = static_cast<char*>(shmat(shminfo_.shmid, 0, 0));
   shminfo_.shmaddr = ximage_->data;
   shminfo_.readOnly = False;
 
+  // Attach the shared memory instance.
   XShmAttach(display_, &shminfo_);
 
+  // Store x and y offsets for later.
   capture_x_ = x;
   capture_y_ = y;
 }
 
-bool PixelSniffer::grabContent()
+bool PixelSniffer::grabContent() const
 {
   // Probably don't need to map them...
   //  XMapWindow(display_, window_.window);
   //  XMapRaised(display_, window_.window);
   try
   {
-    XShmGetImage(display_, window_.window, ximage_.get(), capture_x_, capture_y_, AllPlanes);
+    XShmGetImage(display_, window_, ximage_.get(), capture_x_, capture_y_, AllPlanes);
   }
   catch (const std::runtime_error& e)
   {

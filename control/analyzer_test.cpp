@@ -9,7 +9,6 @@ int main(int argc, char* argv[])
   PixelSniffer sniff;
   ScreenAnalyzer analyzer;
   sniff.connect();
-  sniff.populate();
 
   if (argc < 2)
   {
@@ -21,7 +20,7 @@ int main(int argc, char* argv[])
   if ((std::string(argv[1]) == "capture"))
   {
     size_t target_index = 0;
-    sniff.selectWindow(0);
+    sniff.selectRootWindow();
     bool res = sniff.grabContent();
     auto screen = sniff.getScreen();
     screen.writeContents(argv[2]);

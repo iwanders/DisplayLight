@@ -106,8 +106,7 @@ int main(int argc, char* argv[])
   PixelSniffer sniff;
   ScreenAnalyzer analyzer;
   sniff.connect();
-  sniff.populate();
-  sniff.selectWindow(0);  // 0 is the root window.
+  sniff.selectRootWindow();
   sniff.grabContent();
   //  auto content = sniff.content();
   // some helper functions
