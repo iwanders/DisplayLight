@@ -31,9 +31,12 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
     if ((name) && (status))
     {
       window_info[std::string(name)] = std::string(reinterpret_cast<const char*>(label.value));
+      XFree(name);
     }
+    XFree(label.value);
   }
   XFree(properties);  // Clean up the properties correctly.
+  XFree(window_name.value);  // Clean up the properties correctly.
   getResolution();
 }
 
@@ -154,7 +157,7 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   // Create an XImage we'll write to.
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
     attributes.depth, ZPixmap, NULL, &shminfo_,
-    width, height), [](auto /* unused */){});
+    width, height), [](auto z){ XDestroyImage(z); });
 
   // Initialise the shared memory information.
   shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
