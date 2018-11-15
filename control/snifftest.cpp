@@ -33,7 +33,6 @@ int main(int argc, char* argv[])
   // Benchmark capturing the root window.
   if ((std::string(argv[1]) == "benchmark"))
   {
-    size_t target_index = 0;
     sniff.selectRootWindow();
     size_t count = 1000;
     size_t cumulative = 0;

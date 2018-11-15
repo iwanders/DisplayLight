@@ -4,7 +4,7 @@ project(displaylight)
 FIND_PACKAGE(Boost COMPONENTS system)
 FIND_PACKAGE(X11)
 
-add_compile_options(-Wall -Wextra -pedantic -std=c++14)
+add_compile_options(-Wall -Werror -Wextra -std=c++14)
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 #set(CMAKE_BUILD_TYPE Debug)

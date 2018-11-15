@@ -19,13 +19,16 @@ int main(int argc, char* argv[])
 
   if ((std::string(argv[1]) == "capture"))
   {
-    size_t target_index = 0;
     sniff.selectRootWindow();
     bool res = sniff.grabContent();
+    if (!res)
+    {
+      std::cerr << "Failed to grab content" << std::endl;
+      return 1;
+    }
     auto screen = sniff.getScreen();
     screen.writeContents(argv[2]);
   }
-
 
   if (std::string(argv[1]) == "borderbisect")
   {

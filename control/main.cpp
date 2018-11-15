@@ -101,7 +101,7 @@ void printCanvas(const std::vector<RGB>& canvas)
   std::cout << std::endl;
 }
 
-int main(int argc, char* argv[])
+int main(int /* argc */, char* argv[])
 {
   PixelSniffer sniff;
   ScreenAnalyzer analyzer;

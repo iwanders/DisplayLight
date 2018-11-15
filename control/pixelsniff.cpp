@@ -21,7 +21,7 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
   }
 
   // Iterate over all atoms populate the attribute map.
-  for (size_t i = 0; i < atom_length; i++)
+  for (int i = 0; i < atom_length; i++)
   {
     char* name = nullptr;
     XTextProperty label;
@@ -44,8 +44,8 @@ void WindowInfo::getResolution()
   unsigned int border_width_return;
   unsigned int depth_return;
   Window root_return = XDefaultRootWindow(display);
-  const auto status = XGetGeometry(display, window, &root_return, &x_return, &y_return, &width_return, &height_return,
-                                   &border_width_return, &depth_return);
+  XGetGeometry(display, window, &root_return, &x_return, &y_return, &width_return, &height_return,
+               &border_width_return, &depth_return);  // return code is discarded, can throw BadDrawable.
   width = width_return;
   height = height_return;
 }
@@ -100,7 +100,6 @@ void PixelSniffer::connect()
 {
   display_ = XOpenDisplay(nullptr);
   root_window_ = XRootWindow(display_, XDefaultScreen(display_));
-  int dummy, pixmaps_supported;
   
   if (!XShmQueryExtension(display_))
   {
@@ -155,7 +154,7 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   // Create an XImage we'll write to.
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
     attributes.depth, ZPixmap, NULL, &shminfo_,
-    width, height), [](auto z){});
+    width, height), [](auto /* unused */){});
 
   // Initialise the shared memory information.
   shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
@@ -164,18 +163,24 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   shminfo_.readOnly = False;
 
   // Attach the shared memory instance.
-  XShmAttach(display_, &shminfo_);
+  if (!XShmAttach(display_, &shminfo_))
+  {
+    return false;
+  }
 
   // Store x and y offsets for later.
   capture_x_ = x;
   capture_y_ = y;
+
+  return true;
 }
 
 bool PixelSniffer::grabContent() const
 {
-  // Probably don't need to map them...
-  //  XMapWindow(display_, window_.window);
-  //  XMapRaised(display_, window_.window);
+  // Lets disable these for now; they raise and map the window, giving best opportunity to be able to capture.
+  // The root window is always mapped though.
+  //  XMapWindow(display_, window_);
+  //  XMapRaised(display_, window_);
   try
   {
     XShmGetImage(display_, window_, ximage_.get(), capture_x_, capture_y_, AllPlanes);
