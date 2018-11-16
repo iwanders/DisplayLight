@@ -24,7 +24,7 @@
 #include <X11/extensions/XShm.h>
 
 
-#include "backed_screen.h"
+#include "image.h"
 
 /**
  * @brief Holds information about one specific window on the X11 desktop.
@@ -80,10 +80,10 @@ public:
   bool grabContent() const;
 
   /**
-   * @brief Return a BackedScreen instance that is backed by the current image in the pixelsniffer.
+   * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
    * @return A screen backed by the shared XImage in this class.
    */
-  BackedScreen getScreen() const;
+  Image getScreen() const;
 
   /**
    * @brief Return the current list of windows that are known.

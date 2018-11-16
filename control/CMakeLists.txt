@@ -9,13 +9,13 @@ add_compile_options(-Wall -Werror -Wextra -std=c++14)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 #set(CMAKE_BUILD_TYPE Debug)
 
-add_library(backed_screen  backed_screen.cpp)
+add_library(image  image.cpp)
 
 add_library(pixelsniff pixelsniff.cpp)
-target_link_libraries(pixelsniff ${X11_LIBRARIES} backed_screen)
+target_link_libraries(pixelsniff ${X11_LIBRARIES} image)
 
 add_library(screen_analyzer screen_analyzer.cpp)
-target_link_libraries(screen_analyzer ${X11_LIBRARIES} backed_screen)
+target_link_libraries(screen_analyzer ${X11_LIBRARIES} image)
 
 add_executable(main main.cpp)
 target_link_libraries(main pixelsniff screen_analyzer ${Boost_LIBRARIES})

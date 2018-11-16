@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <sstream>
 #include "../firmware/messages.h"
-#include "backed_screen.h"
+#include "image.h"
 
 /**
  * @brief A ledbox represents a box that will be represented by an led.
@@ -75,7 +75,7 @@ public:
    * @param bisects_per_side Default 4, the number of bisections to do for each side, these are equidistant to borders
    *        and themselves. This makes the system more robust against a black center pixel.
    */
-  void findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max,
+  void findBorders(const Image& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max,
                    size_t bisects_per_side=4);
 
   /**
@@ -96,14 +96,14 @@ public:
    * @param boxed_samples The precomputed boxed samples, these points will be sampled for each box.
    * @param canvas The output vector of led colors.
    */
-  void sampleBoxedSamples(const BackedScreen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas);
+  void sampleBoxedSamples(const Image& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas);
 
   /**
    * @brief Colorize a screen based on the colors in the canvas. This creates boxes on the edge that are 50 pixels deep.
    * @param canvas The canvas to draw on the screen.
    * @param Input and output, outer borders of the screen will ge the boxes drawn on them.
    */
-  void boxColorizer(const std::vector<RGB>& canvas, BackedScreen& screen);
+  void boxColorizer(const std::vector<RGB>& canvas, Image& screen);
 
 private:
   /**

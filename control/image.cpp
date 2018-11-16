@@ -1,11 +1,11 @@
 
-#include "backed_screen.h"
+#include "image.h"
 #include <vector>
 #include <memory>
 #include <sstream>
 #include <fstream>
 
-BackedScreen::BackedScreen(std::shared_ptr<XImage> image)
+Image::Image(std::shared_ptr<XImage> image)
 {
   ximage_ = image;
   shared_memory_ = true;
@@ -13,7 +13,7 @@ BackedScreen::BackedScreen(std::shared_ptr<XImage> image)
   height_ = ximage_->height;
 }
 
-BackedScreen::BackedScreen(Bitmap map)
+Image::Image(Bitmap map)
 {
   map_ = map;
   shared_memory_ = false;
@@ -21,7 +21,7 @@ BackedScreen::BackedScreen(Bitmap map)
   height_ = map.size();
 }
 
-void BackedScreen::convertToBitmap()
+void Image::convertToBitmap()
 {
   if (shared_memory_)
   {
@@ -41,16 +41,16 @@ void BackedScreen::convertToBitmap()
   }
 }
 
-size_t BackedScreen::getWidth() const
+size_t Image::getWidth() const
 {
   return width_;
 }
-size_t BackedScreen::getHeight() const
+size_t Image::getHeight() const
 {
   return height_;
 }
 
-uint32_t BackedScreen::pixel(size_t x, size_t y) const
+uint32_t Image::pixel(size_t x, size_t y) const
 {
   if (shared_memory_)
   {
@@ -64,30 +64,30 @@ uint32_t BackedScreen::pixel(size_t x, size_t y) const
   }
 }
 
-void BackedScreen::setPixel(size_t x, size_t y, uint32_t pix)
+void Image::setPixel(size_t x, size_t y, uint32_t color)
 {
   convertToBitmap();
-  map_[y][x] = pix;
+  map_[y][x] = color;
 }
 
-void BackedScreen::hLine(size_t y, uint32_t pix)
+void Image::hLine(size_t y, uint32_t color)
 {
   for (size_t i = 0; i < getWidth(); i++)
   {
-    setPixel(i, y, pix);
+    setPixel(i, y, color);
   }
 }
 
-void BackedScreen::vLine(size_t x, uint32_t pix)
+void Image::vLine(size_t x, uint32_t color)
 {
   for (size_t i = 0; i < getHeight(); i++)
   {
-    setPixel(x, i, pix);
+    setPixel(x, i, color);
   }
 }
 
 
-std::string BackedScreen::imageToPPM()
+std::string Image::imageToPPM()
 {
   std::stringstream ss;
   ss << "P3\n";
@@ -110,7 +110,7 @@ std::string BackedScreen::imageToPPM()
   return ss.str();
 }
 
-BackedScreen BackedScreen::readContents(const std::string& filename)
+Image Image::readContents(const std::string& filename)
 {
   std::ifstream ifs(filename, std::ios::binary|std::ios::ate);
 
@@ -129,10 +129,10 @@ BackedScreen BackedScreen::readContents(const std::string& filename)
   }
   ifs.close();
 
-  return BackedScreen{contents};
+  return Image{contents};
 }
 
-void BackedScreen::writeContents(const std::string& filename)
+void Image::writeContents(const std::string& filename)
 {
   convertToBitmap();
   std::ofstream fout;

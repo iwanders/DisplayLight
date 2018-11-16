@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
 
   if (std::string(argv[1]) == "borderbisect")
   {
-    auto screen = BackedScreen::readContents(argv[2]);
-    //  auto screen = BackedScreen{content};
+    auto screen = Image::readContents(argv[2]);
+    //  auto screen = Image{content};
     size_t x_min;
     size_t y_min;
     size_t x_max;

@@ -196,8 +196,8 @@ bool PixelSniffer::grabContent() const
   return true;
 }
 
-BackedScreen PixelSniffer::getScreen() const
+Image PixelSniffer::getScreen() const
 {
-  auto screen = BackedScreen{ximage_};
+  auto screen = Image{ximage_};
   return screen;
 }

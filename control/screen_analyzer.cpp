@@ -26,7 +26,7 @@ void ScreenAnalyzer::setCellDepth(size_t horizontal, size_t vertical)
   vertical_celldepth_ = vertical;
 }
 
-void ScreenAnalyzer::findBorders(const BackedScreen& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max, size_t bisects_per_side)
+void ScreenAnalyzer::findBorders(const Image& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max, size_t bisects_per_side)
 {
   // Create 4 vectors to hold the results of the bisection procedure.
   std::vector<size_t> x_min_v(bisects_per_side, 0);
@@ -95,7 +95,7 @@ void ScreenAnalyzer::findBorders(const BackedScreen& screen, size_t& x_min, size
   y_max = *std::max_element(y_max_v.begin(), y_max_v.end());
 }
 
-void ScreenAnalyzer::sampleBoxedSamples(const BackedScreen& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas)
+void ScreenAnalyzer::sampleBoxedSamples(const Image& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas)
 {
   for (size_t box_i = 0; box_i < boxed_samples.size(); box_i++)
   {
@@ -157,7 +157,7 @@ std::vector<BoxedSamples> ScreenAnalyzer::makeBoxedSamplePoints(const size_t dis
 }
 
 
-void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, BackedScreen& screen)
+void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, Image& screen)
 {
   auto boxes = getBoxes(screen.getWidth(), screen.getHeight(), 50, 50);
 
