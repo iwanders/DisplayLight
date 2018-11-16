@@ -159,14 +159,14 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
 
   // Create an XImage we'll write to, this will be reused until this function is called again.
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
-    attributes.depth, ZPixmap, NULL, &shminfo_,
+    attributes.depth, ZPixmap, 0, &shminfo_,
     width, height), [](auto z){ XDestroyImage(z); });
 
   // Initialise the shared memory information.
-  shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0777);
+  shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0600);
   ximage_->data = static_cast<char*>(shmat(shminfo_.shmid, 0, 0));
   shminfo_.shmaddr = ximage_->data;
-  shminfo_.readOnly = False;
+  shminfo_.readOnly = false;
 
   // Attach the shared memory instance.
   if (!XShmAttach(display_, &shminfo_))

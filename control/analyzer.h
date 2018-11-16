@@ -5,28 +5,9 @@
 #include <functional>
 #include <cstdint>
 #include <sstream>
-#include "../firmware/messages.h"
 #include "image.h"
-
-/**
- * @brief A rectangle.
- */
-struct Box
-{
-  size_t x_min { 0 };  //!< The left bound.
-  size_t x_max { 0 };  //!< The right bound.
-  size_t y_min { 0 };  //!< The top bound.
-  size_t y_max { 0 };  //!< The bottom bound.
-
-  Box() = default;
-  Box(size_t xmin, size_t xmax, size_t ymin, size_t ymax);
-
-  operator std::string() const;
-  bool operator <(const Box &b) const;
-
-  size_t width() const;
-  size_t height() const;
-};
+#include "box.h"
+#include "lights.h"
 
 /**
  * @brief This represents a set of sample coordinates and the ledbox associated to it.
@@ -43,10 +24,8 @@ struct BoxSamples
  *    1. Use findBorders(content, ....); to find the bounds of the black borders.
  *    2. Call makeBoxedSamplePoints(dist, ....) with those bounds to make the boxed samples.
  *    3. Call sampleBoxSamples( ... ) to use those boxed samples to actually sample.
- * These steps are seperate because it allows caching stap 2, which takes about 1/3 of the time (100 usec).
- *       
- * @note The getBoxes function and values horizontal_count_, vertical_count_ and led_count_ are hardware specific.
- */
+ * These steps are seperate because it allows caching step 2, which takes about 1/3 of the time (100 usec).
+  */
 class Analyzer
 {
 
@@ -54,14 +33,11 @@ class Analyzer
   size_t vertical_celldepth_ { 200 }; //!< The depth of led cells in vertical direction.
 
 public:
-  static constexpr const size_t horizontal_count_ { 42 };  //!< Number of cells in horizontal direction.
-  static constexpr const size_t vertical_count_ { 73 };    //!< Number of cells in vertical direction.
-  static constexpr const size_t led_count_ { 228 };        //!< The number of leds in total.
 
   /**
-   * @brief Return the number of leds that are used. 
+   * @brief Make a canvas of the appropriate size.
    */
-  size_t ledCount() const;
+  static std::vector<RGB> makeCanvas();
 
   /**
    * @brief Set the depth of the horizontal and vertical cells. This is the distance they protrude into the screen from
@@ -102,16 +78,5 @@ public:
    * @param[in, out] Outer borders of the image will get the boxes drawn on them.
    */
   void boxColorizer(const std::vector<RGB>& canvas, Image& image);
-
-private:
-  /**
-   * @brief Create the box that's associated to each led for an rectangle of an arbritrary dimension.
-   * @param width The width of the region the boxes should span.
-   * @param height The height of the region the boxes should span.
-   * @param horizontal_depth The horizontal depth of the cells on the left and right border.
-   * @param vertical_depth The vertical depth of the cells on the top and bottom border.
-   */
-  std::vector<Box> getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth);
-
 };
 #endif

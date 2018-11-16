@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     auto box_points = analyzer.makeBoxSamples(15, bounds);
 
     // Allocate led canvas.
-    std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
+    auto canvas = analyzer.makeCanvas();
 
     // Perform sample operation on the image, using bounds and box_points. This fills canvas with analyzed colors.
     analyzer.sample(image, bounds, box_points, canvas);

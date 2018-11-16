@@ -3,36 +3,9 @@
 #include <limits>
 #include <algorithm>
 
-Box::Box(size_t xmin, size_t xmax, size_t ymin, size_t ymax) : x_min(xmin), x_max(xmax), y_min(ymin), y_max(ymax)
+std::vector<RGB> Analyzer::makeCanvas()
 {
-}
-
-Box::operator std::string() const
-{
-  std::stringstream ss;
-  ss << "<" << x_min << ", " << y_min << " - " << x_max << ", " << y_max << ">";
-  return ss.str();
-}
-
-bool Box::operator <(const Box& b) const
-{
-  using ComparisonType = std::tuple<size_t, size_t, size_t, size_t>;
-  return ComparisonType(x_min, y_min, x_max, y_max) < ComparisonType(b.x_min, b.y_min, b.x_max, b.y_max);
-}
-
-size_t Box::width() const
-{
-  return x_max - x_min;
-}
-
-size_t Box::height() const
-{
-  return y_max - y_min;
-}
-
-size_t Analyzer::ledCount() const
-{
-  return led_count_;
+  return Lights::makeCanvas();
 }
 
 void Analyzer::setCellDepth(size_t horizontal, size_t vertical)
@@ -149,7 +122,7 @@ void Analyzer::sample(const Image& screen, const Box& bounds, const std::vector<
 std::vector<BoxSamples> Analyzer::makeBoxSamples(const size_t dist_between_samples, const Box& bounds)
 {
   // Get the boxes associated to these bounds.
-  auto boxes = getBoxes(bounds.width(), bounds.height(), horizontal_celldepth_, vertical_celldepth_);
+  auto boxes = Lights::getBoxes(bounds.width(), bounds.height(), horizontal_celldepth_, vertical_celldepth_);
   std::vector<BoxSamples> res{boxes.size()};
 
   for (size_t i = 0; i < boxes.size(); i++)
@@ -172,7 +145,7 @@ std::vector<BoxSamples> Analyzer::makeBoxSamples(const size_t dist_between_sampl
 
 void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& image)
 {
-  auto boxes = getBoxes(image.getWidth(), image.getHeight(), 50, 50);
+  auto boxes = Lights::getBoxes(image.getWidth(), image.getHeight(), 50, 50);
 
   // now that we have the boxes and the canvas, we can color each individual box.
   for (size_t box_i = 0; box_i < boxes.size(); box_i++)
@@ -188,64 +161,4 @@ void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& image)
       }
     }
   }
-}
-
-std::vector<Box> Analyzer::getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth)
-{
-  std::vector<Box> res;
-  res.reserve(led_count_);
-
-  // left side 0 - 41 (starts top)
-  // bottom side: 42 - 113 (starts left)
-  // right side: 114 - 155 (starts bottom)
-  // top side: 156 - 227 (starts right)
-  const size_t vertical_step = height / horizontal_count_;
-  const size_t horizontal_step = width / vertical_count_;
-
-  // do left first.
-  for (size_t led = 0; led < led_count_; led++)
-  {
-    size_t xmin, ymin, xmax, ymax;
-    if (led < 42)
-    {
-      const uint32_t pos = led - 0;
-      // left side.
-      xmin = 0;
-      xmax = horizontal_depth;
-      ymin = pos * vertical_step;
-      ymax = (pos + 1) * vertical_step;
-      res.emplace_back(xmin, xmax, ymin, ymax);
-    }
-    else if (led < 114)
-    {
-      // bottom
-      const uint32_t pos = led - 42;
-      xmin = pos * horizontal_step;
-      xmax = (pos + 1) * horizontal_step;
-      ymin = height - vertical_depth;
-      ymax = height;
-      res.emplace_back(xmin, xmax, ymin, ymax);
-    }
-    else if (led < 156)
-    {
-      // right side.
-      const uint32_t pos = led - 114;
-      xmin = width - horizontal_depth;
-      xmax = width;
-      ymin = height - (pos + 1) * vertical_step;
-      ymax = height - (pos + 0) * vertical_step;
-      res.emplace_back(xmin, xmax, ymin, ymax);
-    }
-    else if (led < led_count_ + 1)
-    {
-      // top side
-      const uint32_t pos = led - 156;
-      xmin = width - (pos + 1) * horizontal_step;
-      xmax = width - (pos + 0) * horizontal_step;
-      ymin = 0;
-      ymax = vertical_depth;
-      res.emplace_back(xmin, xmax, ymin, ymax);
-    }
-  }
-  return res;
 }
