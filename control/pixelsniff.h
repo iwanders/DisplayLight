@@ -75,7 +75,7 @@ public:
   bool selectWindow(const WindowInfo& window);
 
   /**
-   * @brief Grab a snapshot of the windows' context.
+   * @brief Grab a snapshot of the capture area.
    */
   bool grabContent() const;
 
@@ -97,7 +97,7 @@ public:
    * @param width The width of segment to receive, if 0 the window width if used.
    * @param height The height of segment to receive, if 0 the window height if used.
    */
-  bool prepareCapture(size_t x, size_t y, size_t width, size_t height);
+  bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
 
 protected:
   Display* display_;  //!< Pointer to the current X display.

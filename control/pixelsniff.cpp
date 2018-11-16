@@ -9,10 +9,8 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
   level = level_in;
   display = display_in;
   window = window_in;
-  int atom_length = 0;
-  auto properties = XListProperties(display, window, &atom_length);
 
-  // use thse short hand to grab the window name.
+  // Retrieve the window name.
   XTextProperty window_name;
   int status = XGetWMName(display, window_in, &window_name);
   if (status && window_name.value)
@@ -20,19 +18,23 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
     name = std::string(reinterpret_cast<const char*>(window_name.value));
   }
 
-  // Iterate over all atoms populate the attribute map.
+  // Retrieve the Xlist properties.
+  int atom_length = 0;
+  auto properties = XListProperties(display, window, &atom_length);
+
+  // Iterate over all the entries in the xlist, populate the attribute map.
   for (int i = 0; i < atom_length; i++)
   {
-    char* name = nullptr;
+    char* name = XGetAtomName(display, properties[i]);
+
     XTextProperty label;
-    name = XGetAtomName(display, properties[i]);
-    int status = 0;
-    status = XGetTextProperty(display, window, &label, properties[i]);
-    if ((name) && (status))
+    int status = XGetTextProperty(display, window, &label, properties[i]);
+    if ((name != nullptr) && status)
     {
+      // Got a label, add this to the map.
       window_info[std::string(name)] = std::string(reinterpret_cast<const char*>(label.value));
-      XFree(name);
     }
+    XFree(name);
     XFree(label.value);
   }
   XFree(properties);  // Clean up the properties correctly.
@@ -55,7 +57,7 @@ void WindowInfo::getResolution()
 
 void PixelSniffer::recurseWindows(Display* display, Window root_window, std::vector<WindowInfo>& window_info, size_t level)
 {
-  window_info.push_back(WindowInfo(display, root_window, level));
+  window_info.push_back(WindowInfo(display, root_window, level));  // Add the root window as first entry.
   level++;
 
   Window* children = nullptr;
@@ -68,6 +70,7 @@ void PixelSniffer::recurseWindows(Display* display, Window root_window, std::vec
     return;  // either something failed or at leaf.
   }
 
+  // Recurse into all children.
   for (size_t i = 0; i < children_count; i++)
   {
     recurseWindows(display, children[i], window_info, level);
@@ -84,7 +87,7 @@ std::vector<WindowInfo> PixelSniffer::recuseWindows(Display* display, Window roo
 
 /**
  * @brief Static free function used to register as an X error handler.
- *        this function always throws on an error.
+ *        this function always throws on an std::runtime_error.
  */
 static int handleError(Display* display, XErrorEvent* error)
 {
@@ -96,7 +99,7 @@ static int handleError(Display* display, XErrorEvent* error)
 
 PixelSniffer::PixelSniffer()
 {
-  XSetErrorHandler(handleError);
+  XSetErrorHandler(handleError);  // Register the error handler.
 }
 
 void PixelSniffer::connect()
@@ -118,13 +121,13 @@ std::vector<WindowInfo> PixelSniffer::getWindows() const
 bool PixelSniffer::selectRootWindow()
 {
   window_ = root_window_;
-  return prepareCapture(0, 0, 0, 0);  // default to entire screen.
+  return prepareCapture();  // default to entire screen.
 }
 
 bool PixelSniffer::selectWindow(const WindowInfo& window_info)
 {
   window_ = window_info.window;
-  return prepareCapture(0, 0, 0, 0);  // default to entire window.
+  return prepareCapture();  // default to entire window.
 }
 
 bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
@@ -138,7 +141,7 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
     return false;
   }
 
-  // Handle inputs.
+  // Handle inputs arguments.
   if (width == 0)
   {
     width = attributes.width;
@@ -154,7 +157,7 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   x = std::min<size_t>(x, attributes.width);
   y = std::min<size_t>(y, attributes.height);
 
-  // Create an XImage we'll write to.
+  // Create an XImage we'll write to, this will be reused until this function is called again.
   ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
     attributes.depth, ZPixmap, NULL, &shminfo_,
     width, height), [](auto z){ XDestroyImage(z); });

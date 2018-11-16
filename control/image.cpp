@@ -25,15 +25,17 @@ void Image::convertToBitmap()
 {
   if (shared_memory_)
   {
-    uint8_t* data = reinterpret_cast<uint8_t*>(ximage_->data);
+    // Perform copy of the data into the map.
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(ximage_->data);
     const uint8_t stride = ximage_->bits_per_pixel / 8;
+
     map_.resize(height_);
     for (size_t y = 0; y < height_; y++)
     {
       map_[y].resize(width_);
       for (size_t x = 0; x < width_; x++)
       {
-        uint32_t value = *reinterpret_cast<uint32_t*>(data + y * width_ * stride + x * stride);
+        uint32_t value = *reinterpret_cast<const uint32_t*>(data + y * width_ * stride + x * stride);
         map_[y][x] = value & 0x00FFFFFF;
       }
     }
@@ -45,6 +47,7 @@ size_t Image::getWidth() const
 {
   return width_;
 }
+
 size_t Image::getHeight() const
 {
   return height_;
@@ -54,9 +57,9 @@ uint32_t Image::pixel(size_t x, size_t y) const
 {
   if (shared_memory_)
   {
-    uint8_t* data = reinterpret_cast<uint8_t*>(ximage_->data);
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(ximage_->data);
     const uint8_t stride = ximage_->bits_per_pixel / 8;
-    return (*reinterpret_cast<uint32_t*>(data + y * width_ * stride + x * stride)) & 0x00FFFFFF;
+    return (*reinterpret_cast<const uint32_t*>(data + y * width_ * stride + x * stride)) & 0x00FFFFFF;
   }
   else
   {
@@ -117,35 +120,47 @@ Image Image::readContents(const std::string& filename)
   size_t width = 0;
   size_t height = 0;
   Bitmap contents;
-  
+
   ifs.seekg(0, std::ios::beg);
+
+  // Read width
   ifs.read(reinterpret_cast<char*>(&width), sizeof(width));
+
+  // Read height
   ifs.read(reinterpret_cast<char*>(&height), sizeof(height));
+
+  // Resize the number of rows
   contents.resize(height);
   for (auto& row : contents)
   {
+    // For each row, resize it and read the appropriate number of bytes into it.
     row.resize(width);
-    ifs.read(reinterpret_cast<char*>(row.data()), width * sizeof(contents.front()[0]));
+    ifs.read(reinterpret_cast<char*>(row.data()), width * sizeof(contents.front().front()));
   }
   ifs.close();
 
+  // Construct an image from this bitmap.
   return Image{contents};
 }
 
 void Image::writeContents(const std::string& filename)
 {
+  // Copy to a bitmap first, this makes it more convenient to work with.
   convertToBitmap();
   std::ofstream fout;
   fout.open(filename, std::ios::binary | std::ios::out);
 
-  size_t width = map_.front().size();
-  size_t height = map_.size();
+  size_t width = getWidth();
+  size_t height = getHeight();
 
+  // Write width and height.
   fout.write(reinterpret_cast<const char*>(&width), sizeof(width));
   fout.write(reinterpret_cast<const char*>(&height), sizeof(height));
+
+  // Write each row.
   for (auto& row : map_)
   {
-    fout.write(reinterpret_cast<const char*>(row.data()), width * sizeof(row[0]));
+    fout.write(reinterpret_cast<const char*>(row.data()), width * sizeof(row.front()));
   }
 
   fout.close();

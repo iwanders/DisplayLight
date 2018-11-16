@@ -1,56 +1,68 @@
-
-#include <chrono>
 #include <fstream>
 #include "analyzer.h"
 #include "pixelsniff.h"
 
 int main(int argc, char* argv[])
 {
-  PixelSniffer sniff;
-  Analyzer analyzer;
-  sniff.connect();
-
   if (argc < 2)
   {
-    std::cout << "./" << argv[0] << " capture filename" << std::endl;
-    std::cout << "./" << argv[0] << " borderbisect content_in ppm_out" << std::endl;
+    std::cout << "./" << argv[0] << " capture image_out.bin" << std::endl;
+    std::cout << "./" << argv[0] << " borderbisect image_in.bin image_out.ppm" << std::endl;
     return 1;
   }
 
+  // Simple capture operation, captures to binary file.
   if ((std::string(argv[1]) == "capture"))
   {
+    // Create the pixel sniffer.
+    PixelSniffer sniff;
+    sniff.connect();
     sniff.selectRootWindow();
-    bool res = sniff.grabContent();
-    if (!res)
+    bool success = sniff.grabContent();
+    if (!success)
     {
       std::cerr << "Failed to grab content" << std::endl;
       return 1;
     }
-    auto screen = sniff.getScreen();
-    screen.writeContents(argv[2]);
+    auto image = sniff.getScreen();
+    image.writeContents(argv[2]);
   }
 
+  // Test border detection.
   if (std::string(argv[1]) == "borderbisect")
   {
-    auto screen = Image::readContents(argv[2]);
-    //  auto screen = Image{content};
-    auto bounds = analyzer.findBorders(screen);
+    Analyzer analyzer;
+
+    // Read the file.
+    auto image = Image::readContents(argv[2]);
+
+    // Detect the borders
+    auto bounds = analyzer.findBorders(image);
     std::cout << "bounds: " << std::string(bounds) << std::endl;
+
+    // Create sample points associated to borders.
     auto box_points = analyzer.makeBoxSamples(15, bounds);
 
+    // Allocate led canvas.
     std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
-    analyzer.sample(screen, bounds, box_points, canvas);
 
-    analyzer.boxColorizer(canvas, screen);
+    // Perform sample operation on the image, using bounds and box_points. This fills canvas with analyzed colors.
+    analyzer.sample(image, bounds, box_points, canvas);
 
-    screen.hLine(bounds.y_min, 0x00FF0000);
-    screen.hLine(bounds.y_max, 0x0000FF00);
-    screen.vLine(bounds.x_min, 0x000000FF);
-    screen.vLine(bounds.x_max, 0x00FF00FF);
+    // Draw the canvas' boxes on the image.
+    analyzer.boxColorizer(canvas, image);
 
+    // Draw the borders
+    image.hLine(bounds.y_min, 0x00FF0000);
+    image.hLine(bounds.y_max, 0x0000FF00);
+    image.vLine(bounds.x_min, 0x000000FF);
+    image.vLine(bounds.x_max, 0x00FF00FF);
+
+    // Write the analysed results as ppm file.
     std::ofstream outcontent(argv[3]);
-    outcontent << screen.imageToPPM();
+    outcontent << image.imageToPPM();
     outcontent.close();
   }
 
+  return 0;
 }
