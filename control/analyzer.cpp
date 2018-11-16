@@ -1,4 +1,4 @@
-#include "screen_analyzer.h"
+#include "analyzer.h"
 #include <iostream>
 #include <limits>
 #include <algorithm>
@@ -15,18 +15,18 @@ LedBox::operator std::string() const
   return ss.str();
 }
 
-size_t ScreenAnalyzer::ledCount() const
+size_t Analyzer::ledCount() const
 {
   return led_count_;
 }
 
-void ScreenAnalyzer::setCellDepth(size_t horizontal, size_t vertical)
+void Analyzer::setCellDepth(size_t horizontal, size_t vertical)
 {
   horizontal_celldepth_ = horizontal;
   vertical_celldepth_ = vertical;
 }
 
-void ScreenAnalyzer::findBorders(const Image& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max, size_t bisects_per_side)
+void Analyzer::findBorders(const Image& screen, size_t& x_min, size_t& y_min, size_t& x_max, size_t& y_max, size_t bisects_per_side)
 {
   // Create 4 vectors to hold the results of the bisection procedure.
   std::vector<size_t> x_min_v(bisects_per_side, 0);
@@ -95,7 +95,7 @@ void ScreenAnalyzer::findBorders(const Image& screen, size_t& x_min, size_t& y_m
   y_max = *std::max_element(y_max_v.begin(), y_max_v.end());
 }
 
-void ScreenAnalyzer::sampleBoxedSamples(const Image& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas)
+void Analyzer::sampleBoxedSamples(const Image& screen, const size_t x_min, const size_t y_min, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas)
 {
   for (size_t box_i = 0; box_i < boxed_samples.size(); box_i++)
   {
@@ -132,7 +132,7 @@ void ScreenAnalyzer::sampleBoxedSamples(const Image& screen, const size_t x_min,
   }  
 }
 
-std::vector<BoxedSamples> ScreenAnalyzer::makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min,
+std::vector<BoxedSamples> Analyzer::makeBoxedSamplePoints(const size_t dist_between_samples, const size_t x_min,
   const size_t y_min, const size_t x_max, const size_t y_max)
 {
   // Get the boxes associated to these bounds.
@@ -157,7 +157,7 @@ std::vector<BoxedSamples> ScreenAnalyzer::makeBoxedSamplePoints(const size_t dis
 }
 
 
-void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, Image& screen)
+void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& screen)
 {
   auto boxes = getBoxes(screen.getWidth(), screen.getHeight(), 50, 50);
 
@@ -177,7 +177,7 @@ void ScreenAnalyzer::boxColorizer(const std::vector<RGB>& canvas, Image& screen)
   }
 }
 
-std::vector<LedBox> ScreenAnalyzer::getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth)
+std::vector<LedBox> Analyzer::getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth)
 {
   std::vector<LedBox> res;
   res.reserve(led_count_);

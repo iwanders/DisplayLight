@@ -14,14 +14,14 @@ add_library(image  image.cpp)
 add_library(pixelsniff pixelsniff.cpp)
 target_link_libraries(pixelsniff ${X11_LIBRARIES} image)
 
-add_library(screen_analyzer screen_analyzer.cpp)
-target_link_libraries(screen_analyzer ${X11_LIBRARIES} image)
+add_library(analyzer analyzer.cpp)
+target_link_libraries(analyzer ${X11_LIBRARIES} image)
 
 add_executable(main main.cpp)
-target_link_libraries(main pixelsniff screen_analyzer ${Boost_LIBRARIES})
+target_link_libraries(main pixelsniff analyzer ${Boost_LIBRARIES})
 
 add_executable(snifftest snifftest.cpp)
 target_link_libraries(snifftest pixelsniff ${Boost_LIBRARIES})
 
 add_executable(analyzer_test analyzer_test.cpp)
-target_link_libraries(analyzer_test pixelsniff screen_analyzer ${Boost_LIBRARIES})
+target_link_libraries(analyzer_test pixelsniff analyzer ${Boost_LIBRARIES})

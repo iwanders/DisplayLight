@@ -1,13 +1,13 @@
 
 #include <chrono>
 #include <fstream>
-#include "screen_analyzer.h"
+#include "analyzer.h"
 #include "pixelsniff.h"
 
 int main(int argc, char* argv[])
 {
   PixelSniffer sniff;
-  ScreenAnalyzer analyzer;
+  Analyzer analyzer;
   sniff.connect();
 
   if (argc < 2)

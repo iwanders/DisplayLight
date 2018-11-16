@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../firmware/messages.h"
 #include "pixelsniff.h"
-#include "screen_analyzer.h"
+#include "analyzer.h"
 
 
 #include <array>
@@ -104,7 +104,7 @@ void printCanvas(const std::vector<RGB>& canvas)
 int main(int /* argc */, char* argv[])
 {
   PixelSniffer sniff;
-  ScreenAnalyzer analyzer;
+  Analyzer analyzer;
   sniff.connect();
   sniff.selectRootWindow();
   sniff.grabContent();

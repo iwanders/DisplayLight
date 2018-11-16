@@ -1,5 +1,5 @@
-#ifndef SCREEN_ANALYZER_H
-#define SCREEN_ANALYZER_H
+#ifndef ANALYZER_H
+#define ANALYZER_H
 
 #include <vector>
 #include <functional>
@@ -43,7 +43,7 @@ struct BoxedSamples
  *       
  * @note The getBoxes function and values horizontal_count_, vertical_count_ and led_count_ are hardware specific.
  */
-class ScreenAnalyzer
+class Analyzer
 {
 
   size_t horizontal_celldepth_ { 200 }; //!< The depth of the cells in horizontal direction.
