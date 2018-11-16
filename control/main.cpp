@@ -148,8 +148,7 @@ int main(int /* argc */, char* argv[])
     std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
 
 
-    using Bounds = std::tuple<size_t, size_t, size_t, size_t>;
-    std::map<Bounds, std::vector<BoxedSamples>> cache;
+    std::map<Box, std::vector<BoxedSamples>> cache;
     std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
     while (1)
     {
@@ -184,20 +183,19 @@ int main(int /* argc */, char* argv[])
       tic();
       //=================
       // perform bisection.
-      Bounds current;
-      analyzer.findBorders(content, std::get<0>(current), std::get<1>(current), std::get<2>(current), std::get<3>(current));
+      Box current = analyzer.findBorders(content);
       // check if present in the cache.
       //  if (cache.find(current) == cache.end())
       {
      
         // not in the cache, quickly, make the box points.
-        cache[current] = analyzer.makeBoxedSamplePoints(15, std::get<0>(current), std::get<1>(current), std::get<2>(current), std::get<3>(current));   
-        std::cout << "Making boxed points." << ", " <<  std::get<0>(current)<< ", " <<  std::get<1>(current)<< ", " <<  std::get<2>(current)<< ", " <<  std::get<3>(current) << std::endl;
+        cache[current] = analyzer.makeBoxedSamplePoints(15, current);   
+        std::cout << "Making boxed points." << ", " << std::string(current) << std::endl;
         std::cout << "   Samples per cell: " << cache[current].front().points.size() << std::endl;
       }
 
       // perform the analyses.
-      analyzer.sampleBoxedSamples(content, std::get<0>(current), std::get<1>(current), cache[current], canvas);
+      analyzer.sampleBoxedSamples(content, current, cache[current], canvas);
       cumulative += toc();
       
       //===============
