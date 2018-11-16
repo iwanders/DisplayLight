@@ -18,9 +18,10 @@ public:
   /**
    * @brief Connect to the serial port.
    * @param serial_path The path to the serial port, usually /dev/ttyACM* or /dev/ttyUSB*
+   * @param baudrate The baudrate to use for communication.
    * @return true on success, false in case an error occured.
    */
-  bool connect(const std::string& serial_path);
+  bool connect(const std::string& serial_path, size_t baudrate=115200);
 
   /**
    * @brief Return the total number of LEDs present.
@@ -73,7 +74,7 @@ private:
   /**
    * @brief Internal helper function that converts a canvas in a list of messages that can be sent to the serial port.
    */
-  std::vector<Message> chunker(const std::vector<RGB>& buffer) const;
+  std::vector<Message> chunker(const std::vector<RGB>& canvas) const;
 
   /**
    * @brief Apply the limiter to an RGB tuple.

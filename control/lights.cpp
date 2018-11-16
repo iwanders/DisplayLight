@@ -3,12 +3,12 @@
 #include <iostream>
 
 
-bool Lights::connect(const std::string& serial_path)
+bool Lights::connect(const std::string& serial_path, size_t baudrate)
 {
   try
   {
     serial_ = std::make_unique<boost::asio::serial_port>( io_, serial_path);
-    serial_->set_option(boost::asio::serial_port_base::baud_rate(1152000));
+    serial_->set_option(boost::asio::serial_port_base::baud_rate(baudrate));
   }
   catch (boost::system::system_error& e)
   {
@@ -18,27 +18,35 @@ bool Lights::connect(const std::string& serial_path)
   return true;
 }
 
-std::vector<Message> Lights::chunker(const std::vector<RGB>& buffer) const
+std::vector<Message> Lights::chunker(const std::vector<RGB>& canvas) const
 {
   std::vector<Message> res;
-  Message x;
-  x.type = COLOR;
-  x.color.offset = 0;
-  size_t index = 0;
-  for (uint8_t i = 0; i < buffer.size(); i++)
-  {
-    x.color.offset = (index / 19) * 19;
-    x.color.color[index % 19] = buffer[i];
-    limiter(x.color.color[index % 19]);
 
-    index++;
-    if (index % 19 == 0)
+  // Setup message to set colors.
+  Message msg;
+  msg.type = COLOR;
+  msg.color.offset = 0;
+
+  const size_t leds_per_message = msg.color.leds_per_message;
+  for (size_t index = 0; index < canvas.size(); index++)
+  {
+    // Set the offset of this message, flooring the index
+    msg.color.offset = (index / leds_per_message) * leds_per_message;
+
+    // Set the color with the desired color from the canvas
+    msg.color.color[index % leds_per_message] = canvas[index];
+
+    // Limit the color
+    limiter(msg.color.color[index % leds_per_message]);
+
+    if ((index + 1) % leds_per_message == 0) // If message is complete, push it into the vector.
     {
-      res.push_back(x);
+      res.push_back(msg);
     }
   }
 
-  res.back().color.settings = COLOR_SETTINGS_SHOW_AFTER;
+  // Tell the hardware to actually set the message after.
+  res.back().color.settings = msg.color.settings_show_after;
   return res;
 }
 

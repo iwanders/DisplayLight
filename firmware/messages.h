@@ -22,22 +22,29 @@ enum MsgType : uint8_t
 
 struct Config
 {
-  uint32_t decay_time_delay_ms;  // 0 is disabled.
+  //! If there has been activity, decay won't take place for decay_time_delay_ms milliseconds.
+  uint32_t decay_time_delay_ms;  //!< 0 is disabled.
+
+  //! The decay interval, after inactivity the decay will be performed every decay_interval_us microseconds.
   uint32_t decay_interval_us;
+
+  //! The amount of decay that occurs each cycle.
   uint32_t decay_amount;
-  float gamma_r;
-  float gamma_g;
-  float gamma_b;
+
+  float gamma_r;  //!< Gamma for the red channel.
+  float gamma_g;  //!< Gamma for the green channel.
+  float gamma_b;  //!< Gamma for the blue channel.
 };
 
 struct ColorData
 {
+  static constexpr const size_t leds_per_message { 19 };
+  static constexpr const size_t settings_show_after { 1 << 0 };
+  static constexpr const size_t settings_set_all { 1 << 1 };
   uint16_t offset;
   uint8_t settings;
-  RGB color[19];  // takes 12 messages to send 228 bytes
+  RGB color[leds_per_message];  // takes 12 messages to send 228 bytes
 };
-#define COLOR_SETTINGS_SHOW_AFTER (1<<0)
-#define COLOR_SETTINGS_SET_ALL (1<<1)
 
 struct Message
 {
