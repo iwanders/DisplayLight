@@ -36,10 +36,10 @@ int main(int argc, char* argv[])
     //  auto screen = Image{content};
     auto bounds = analyzer.findBorders(screen);
     std::cout << "bounds: " << std::string(bounds) << std::endl;
-    auto box_points = analyzer.makeBoxedSamplePoints(15, bounds);
+    auto box_points = analyzer.makeBoxSamples(15, bounds);
 
     std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
-    analyzer.sampleBoxedSamples(screen, bounds, box_points, canvas);
+    analyzer.sample(screen, bounds, box_points, canvas);
 
     analyzer.boxColorizer(canvas, screen);
 

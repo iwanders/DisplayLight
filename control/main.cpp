@@ -148,7 +148,7 @@ int main(int /* argc */, char* argv[])
     std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
 
 
-    std::map<Box, std::vector<BoxedSamples>> cache;
+    std::map<Box, std::vector<BoxSamples>> cache;
     std::vector<RGB> canvas{analyzer.ledCount(), {0, 0, 0}};
     while (1)
     {
@@ -189,13 +189,13 @@ int main(int /* argc */, char* argv[])
       {
      
         // not in the cache, quickly, make the box points.
-        cache[current] = analyzer.makeBoxedSamplePoints(15, current);   
+        cache[current] = analyzer.makeBoxSamples(15, current);   
         std::cout << "Making boxed points." << ", " << std::string(current) << std::endl;
         std::cout << "   Samples per cell: " << cache[current].front().points.size() << std::endl;
       }
 
       // perform the analyses.
-      analyzer.sampleBoxedSamples(content, current, cache[current], canvas);
+      analyzer.sample(content, current, cache[current], canvas);
       cumulative += toc();
       
       //===============

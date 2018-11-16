@@ -3,6 +3,10 @@
 #include <limits>
 #include <algorithm>
 
+Box::Box(size_t xmin, size_t xmax, size_t ymin, size_t ymax) : x_min(xmin), x_max(xmax), y_min(ymin), y_max(ymax)
+{
+}
+
 Box::operator std::string() const
 {
   std::stringstream ss;
@@ -16,29 +20,14 @@ bool Box::operator <(const Box& b) const
   return ComparisonType(x_min, y_min, x_max, y_max) < ComparisonType(b.x_min, b.y_min, b.x_max, b.y_max);
 }
 
-
 size_t Box::width() const
 {
   return x_max - x_min;
 }
+
 size_t Box::height() const
 {
   return y_max - y_min;
-}
-
-LedBox::LedBox(size_t led_index, size_t xmin, size_t xmax, size_t ymin, size_t ymax): index{led_index}
-{
-  box.x_min = xmin;
-  box.x_max = xmax;
-  box.y_min = ymin;
-  box.y_max = ymax;
-}
-
-LedBox::operator std::string() const
-{
-  std::stringstream ss;
-  ss << "[ " << index << " " << std::string(box) << "]";
-  return ss.str();
 }
 
 size_t Analyzer::ledCount() const
@@ -52,13 +41,13 @@ void Analyzer::setCellDepth(size_t horizontal, size_t vertical)
   vertical_celldepth_ = vertical;
 }
 
-Box Analyzer::findBorders(const Image& screen, size_t bisects_per_side) const
+Box Analyzer::findBorders(const Image& image, size_t bisects_per_side) const
 {
   // Create 4 vectors to hold the results of the bisection procedure.
   std::vector<size_t> x_min_v(bisects_per_side, 0);
-  std::vector<size_t> x_max_v(bisects_per_side, screen.getWidth() - 1);
+  std::vector<size_t> x_max_v(bisects_per_side, image.getWidth() - 1);
   std::vector<size_t> y_min_v(bisects_per_side, 0);
-  std::vector<size_t> y_max_v(bisects_per_side, screen.getHeight() - 1);
+  std::vector<size_t> y_max_v(bisects_per_side, image.getHeight() - 1);
 
   // lambda to perform the bisection procedure.
   auto bisect = [](auto f, auto& min, auto& max)
@@ -86,31 +75,31 @@ Box Analyzer::findBorders(const Image& screen, size_t bisects_per_side) const
   for (size_t i = 0 ; i < bisects_per_side; i++)
   {
     size_t tmp = 0;
-    size_t mid_y = (screen.getHeight() - 1) / (bisects_per_side + 1) * (i + 1);
-    size_t mid_x = (screen.getWidth() - 1) / (bisects_per_side + 1) * (i + 1);
+    size_t mid_y = (image.getHeight() - 1) / (bisects_per_side + 1) * (i + 1);
+    size_t mid_x = (image.getWidth() - 1) / (bisects_per_side + 1) * (i + 1);
       
     // Perform left bound
     tmp = mid_x;
     bisect([&](auto v) {
-        return screen.pixel(v, mid_y) != 0;
+        return image.pixel(v, mid_y) != 0;
       }, x_min_v[i], tmp);
 
     // Perform right bound.
     tmp = mid_x;
     bisect([&](auto v) {
-        return screen.pixel(v, mid_y) != 0;
+        return image.pixel(v, mid_y) != 0;
       }, tmp, x_max_v[i]);
 
     // Perform lower bound.
     tmp = mid_y;
     bisect([&](size_t v) {
-        return screen.pixel(mid_x, v) != 0;
+        return image.pixel(mid_x, v) != 0;
       }, y_min_v[i], tmp);
 
     // Perform upper bound.
     tmp = mid_y;
     bisect([&](auto v) {
-        return screen.pixel(mid_x, v) != 0;
+        return image.pixel(mid_x, v) != 0;
       }, tmp, y_max_v[i]);
   }
 
@@ -123,11 +112,11 @@ Box Analyzer::findBorders(const Image& screen, size_t bisects_per_side) const
   return bounds;
 }
 
-void Analyzer::sampleBoxedSamples(const Image& screen, const Box& bounds, const std::vector<BoxedSamples>& boxed_samples, std::vector<RGB>& canvas)
+void Analyzer::sample(const Image& screen, const Box& bounds, const std::vector<BoxSamples>& boxed_samples, std::vector<RGB>& canvas)
 {
   for (size_t box_i = 0; box_i < boxed_samples.size(); box_i++)
   {
-    auto& box = boxed_samples[box_i];
+    const auto& box = boxed_samples[box_i];
     auto& canvas_pixel = canvas[box_i];
 
     // Run over the sample points and create average color.
@@ -137,7 +126,7 @@ void Analyzer::sampleBoxedSamples(const Image& screen, const Box& bounds, const 
     uint32_t total = 0;
     for (const auto& p : box.points)
     {
-      const uint32_t color = screen.pixel(p.first + bounds.x_min,p.second + bounds.y_min);
+      const uint32_t color = screen.pixel(p.first + bounds.x_min, p.second + bounds.y_min);
       R += (color >> 16) & 0xFF;
       G += (color >> 8) & 0xFF;
       B += color & 0xFF;
@@ -147,29 +136,26 @@ void Analyzer::sampleBoxedSamples(const Image& screen, const Box& bounds, const 
     if (total == 0)
     {
       // This can only happen if there are no samples in the box, which should never happen.
-      throw std::runtime_error("No samples in this box: " + std::string(box.led_box));
+      throw std::runtime_error("No samples in this box: " + std::string(box.box));
     }
-    R = R * 255 / total;
-    G = G * 255 / total;
-    B = B * 255 / total;
 
-    // Assign the calculated color to the canvas.
-    canvas_pixel.R = R;
-    canvas_pixel.G = G;
-    canvas_pixel.B = B;
+    // Assign the calculated average color to the canvas.
+    canvas_pixel.R = R * 255 / total;
+    canvas_pixel.G = G * 255 / total;
+    canvas_pixel.B = B * 255 / total;
   }  
 }
 
-std::vector<BoxedSamples> Analyzer::makeBoxedSamplePoints(const size_t dist_between_samples, const Box& bounds)
+std::vector<BoxSamples> Analyzer::makeBoxSamples(const size_t dist_between_samples, const Box& bounds)
 {
   // Get the boxes associated to these bounds.
   auto boxes = getBoxes(bounds.width(), bounds.height(), horizontal_celldepth_, vertical_celldepth_);
-  std::vector<BoxedSamples> res{boxes.size()};
+  std::vector<BoxSamples> res{boxes.size()};
 
   for (size_t i = 0; i < boxes.size(); i++)
   {
-    const auto& box = res[i].led_box.box;
-    res[i].led_box = boxes[i];
+    const auto& box = res[i].box;
+    res[i].box = boxes[i];
     
     // now add samples.
     for (size_t y = box.y_min; y < box.y_max ; y += dist_between_samples)
@@ -184,29 +170,29 @@ std::vector<BoxedSamples> Analyzer::makeBoxedSamplePoints(const size_t dist_betw
 }
 
 
-void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& screen)
+void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& image)
 {
-  auto boxes = getBoxes(screen.getWidth(), screen.getHeight(), 50, 50);
+  auto boxes = getBoxes(image.getWidth(), image.getHeight(), 50, 50);
 
   // now that we have the boxes and the canvas, we can color each individual box.
   for (size_t box_i = 0; box_i < boxes.size(); box_i++)
   {
-    const auto& box = boxes[box_i].box;
+    const auto& box = boxes[box_i];
     const auto& color = canvas[box_i];
     // now, we run through the box and fill it with the color.
     for (size_t y=box.y_min; y < box.y_max; y++)
     {
       for (size_t x=box.x_min; x < box.x_max; x++)
       {
-        screen.setPixel(x, y, color.toUint32());
+        image.setPixel(x, y, color.toUint32());
       }
     }
   }
 }
 
-std::vector<LedBox> Analyzer::getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth)
+std::vector<Box> Analyzer::getBoxes(size_t width, size_t height, size_t horizontal_depth, size_t vertical_depth)
 {
-  std::vector<LedBox> res;
+  std::vector<Box> res;
   res.reserve(led_count_);
 
   // left side 0 - 41 (starts top)
@@ -228,7 +214,7 @@ std::vector<LedBox> Analyzer::getBoxes(size_t width, size_t height, size_t horiz
       xmax = horizontal_depth;
       ymin = pos * vertical_step;
       ymax = (pos + 1) * vertical_step;
-      res.emplace_back(led, xmin, xmax, ymin, ymax);
+      res.emplace_back(xmin, xmax, ymin, ymax);
     }
     else if (led < 114)
     {
@@ -238,7 +224,7 @@ std::vector<LedBox> Analyzer::getBoxes(size_t width, size_t height, size_t horiz
       xmax = (pos + 1) * horizontal_step;
       ymin = height - vertical_depth;
       ymax = height;
-      res.emplace_back(led, xmin, xmax, ymin, ymax);
+      res.emplace_back(xmin, xmax, ymin, ymax);
     }
     else if (led < 156)
     {
@@ -248,7 +234,7 @@ std::vector<LedBox> Analyzer::getBoxes(size_t width, size_t height, size_t horiz
       xmax = width;
       ymin = height - (pos + 1) * vertical_step;
       ymax = height - (pos + 0) * vertical_step;
-      res.emplace_back(led, xmin, xmax, ymin, ymax);
+      res.emplace_back(xmin, xmax, ymin, ymax);
     }
     else if (led < led_count_ + 1)
     {
@@ -258,7 +244,7 @@ std::vector<LedBox> Analyzer::getBoxes(size_t width, size_t height, size_t horiz
       xmax = width - (pos + 0) * horizontal_step;
       ymin = 0;
       ymax = vertical_depth;
-      res.emplace_back(led, xmin, xmax, ymin, ymax);
+      res.emplace_back(xmin, xmax, ymin, ymax);
     }
   }
   return res;
