@@ -1,3 +1,22 @@
+/*
+  The MIT License (MIT)
+  Copyright (c) 2018 Ivor Wanders
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
 #ifndef LIGHTS_H
 #define LIGHTS_H
 
@@ -14,14 +33,13 @@
 class Lights
 {
 public:
-
   /**
    * @brief Connect to the serial port.
    * @param serial_path The path to the serial port, usually /dev/ttyACM* or /dev/ttyUSB*
    * @param baudrate The baudrate to use for communication.
    * @return true on success, false in case an error occured.
    */
-  bool connect(const std::string& serial_path, size_t baudrate=115200);
+  bool connect(const std::string& serial_path, size_t baudrate = 115200);
 
   /**
    * @brief Return the total number of LEDs present.
@@ -66,10 +84,11 @@ public:
    * @brief Make a canvas of the appropriate size.
    */
   static std::vector<RGB> makeCanvas();
+
 private:
-  static constexpr const size_t horizontal_count_ { 42 };  //!< Number of cells in horizontal direction.
-  static constexpr const size_t vertical_count_ { 73 };    //!< Number of cells in vertical direction.
-  static constexpr const size_t led_count_ { 228 };        //!< The number of leds in total.
+  static constexpr const size_t horizontal_count_{ 42 };  //!< Number of cells in horizontal direction.
+  static constexpr const size_t vertical_count_{ 73 };    //!< Number of cells in vertical direction.
+  static constexpr const size_t led_count_{ 228 };        //!< The number of leds in total.
 
   /**
    * @brief Internal helper function that converts a canvas in a list of messages that can be sent to the serial port.
@@ -82,10 +101,8 @@ private:
   void limiter(RGB& rgb) const;
 
   std::unique_ptr<boost::asio::serial_port> serial_;  //!< Object to interact with the serial port.
-  boost::asio::io_service io_;  //!< IO service.
-  double limit_factor_ { 0.5 };  //!< Limiter multiplication factor.
+  boost::asio::io_service io_;                        //!< IO service.
+  double limit_factor_{ 0.5 };                        //!< Limiter multiplication factor.
 };
-
-
 
 #endif

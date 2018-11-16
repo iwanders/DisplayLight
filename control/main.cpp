@@ -1,17 +1,36 @@
+/*
+  The MIT License (MIT)
+  Copyright (c) 2018 Ivor Wanders
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
 #include <iostream>
 #include <vector>
 
-#include "pixelsniff.h"
 #include "analyzer.h"
 #include "lights.h"
+#include "pixelsniff.h"
 #include "timing.h"
 
 void printHelp(const std::string& progname)
 {
-    std::cout << "" << progname << " serial_port_path [framerate_in_hz]" << std::endl;
+  std::cout << "" << progname << " serial_port_path [framerate_in_hz]" << std::endl;
 }
 
-int main(int argc , char* argv[])
+int main(int argc, char* argv[])
 {
   PixelSniffer sniff;
   sniff.connect();
@@ -28,12 +47,12 @@ int main(int argc , char* argv[])
   }
 
   // Create the rate limiter with a default rate.
-  double framerate { 60 };
+  double framerate{ 60 };
   if (argc >= 3)
   {
     framerate = std::atof(argv[2]);
   }
-  Limiter limiter{framerate};
+  Limiter limiter{ framerate };
 
   // Try to connect to the provided serial port.
   if (!lights.connect(argv[1]))
@@ -43,7 +62,7 @@ int main(int argc , char* argv[])
   }
 
   // Crate the canvas
-  std::vector<RGB> canvas{lights.ledCount(), {0, 0, 0}};
+  std::vector<RGB> canvas{ lights.ledCount(), { 0, 0, 0 } };
 
   while (1)
   {

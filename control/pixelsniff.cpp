@@ -1,8 +1,26 @@
-
+/*
+  The MIT License (MIT)
+  Copyright (c) 2018 Ivor Wanders
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
 #include "pixelsniff.h"
+#include <chrono>
 #include <fstream>
 #include <sstream>
-#include <chrono>
 
 WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
 {
@@ -37,7 +55,7 @@ WindowInfo::WindowInfo(Display* display_in, Window window_in, size_t level_in)
     XFree(name);
     XFree(label.value);
   }
-  XFree(properties);  // Clean up the properties correctly.
+  XFree(properties);         // Clean up the properties correctly.
   XFree(window_name.value);  // Clean up the properties correctly.
   getResolution();
 }
@@ -49,13 +67,14 @@ void WindowInfo::getResolution()
   unsigned int border_width_return;
   unsigned int depth_return;
   Window root_return = XDefaultRootWindow(display);
-  XGetGeometry(display, window, &root_return, &x_return, &y_return, &width_return, &height_return,
-               &border_width_return, &depth_return);  // return code is discarded, can throw BadDrawable.
+  XGetGeometry(display, window, &root_return, &x_return, &y_return, &width_return, &height_return, &border_width_return,
+               &depth_return);  // return code is discarded, can throw BadDrawable.
   width = width_return;
   height = height_return;
 }
 
-void PixelSniffer::recurseWindows(Display* display, Window root_window, std::vector<WindowInfo>& window_info, size_t level)
+void PixelSniffer::recurseWindows(Display* display, Window root_window, std::vector<WindowInfo>& window_info,
+                                  size_t level)
 {
   window_info.push_back(WindowInfo(display, root_window, level));  // Add the root window as first entry.
   level++;
@@ -106,7 +125,7 @@ void PixelSniffer::connect()
 {
   display_ = XOpenDisplay(nullptr);
   root_window_ = XRootWindow(display_, XDefaultScreen(display_));
-  
+
   if (!XShmQueryExtension(display_))
   {
     throw std::runtime_error("XShmQueryExtension needs to be available.");
@@ -158,9 +177,9 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   y = std::min<size_t>(y, attributes.height);
 
   // Create an XImage we'll write to, this will be reused until this function is called again.
-  ximage_ = std::shared_ptr<XImage>(XShmCreateImage(display_, attributes.visual,
-    attributes.depth, ZPixmap, 0, &shminfo_,
-    width, height), [](auto z){ XDestroyImage(z); });
+  ximage_ = std::shared_ptr<XImage>(
+      XShmCreateImage(display_, attributes.visual, attributes.depth, ZPixmap, 0, &shminfo_, width, height),
+      [](auto z) { XDestroyImage(z); });
 
   // Initialise the shared memory information.
   shminfo_.shmid = shmget(IPC_PRIVATE, ximage_->bytes_per_line * ximage_->height, IPC_CREAT | 0600);
@@ -201,6 +220,6 @@ bool PixelSniffer::grabContent() const
 
 Image PixelSniffer::getScreen() const
 {
-  auto screen = Image{ximage_};
+  auto screen = Image{ ximage_ };
   return screen;
 }

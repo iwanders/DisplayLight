@@ -1,7 +1,26 @@
+/*
+  The MIT License (MIT)
+  Copyright (c) 2018 Ivor Wanders
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
 #include "analyzer.h"
+#include <algorithm>
 #include <iostream>
 #include <limits>
-#include <algorithm>
 
 std::vector<RGB> Analyzer::makeCanvas()
 {
@@ -23,8 +42,7 @@ Box Analyzer::findBorders(const Image& image, size_t bisects_per_side) const
   std::vector<size_t> y_max_v(bisects_per_side, image.getHeight() - 1);
 
   // lambda to perform the bisection procedure.
-  auto bisect = [](auto f, auto& min, auto& max)
-  {
+  auto bisect = [](auto f, auto& min, auto& max) {
     auto upper = f(max);
     auto lower = f(min);
     while ((max - min > 2) && (upper != lower))
@@ -45,35 +63,27 @@ Box Analyzer::findBorders(const Image& image, size_t bisects_per_side) const
   };
 
   // Perform the bisections.
-  for (size_t i = 0 ; i < bisects_per_side; i++)
+  for (size_t i = 0; i < bisects_per_side; i++)
   {
     size_t tmp = 0;
     size_t mid_y = (image.getHeight() - 1) / (bisects_per_side + 1) * (i + 1);
     size_t mid_x = (image.getWidth() - 1) / (bisects_per_side + 1) * (i + 1);
-      
+
     // Perform left bound
     tmp = mid_x;
-    bisect([&](auto v) {
-        return image.pixel(v, mid_y) != 0;
-      }, x_min_v[i], tmp);
+    bisect([&](auto v) { return image.pixel(v, mid_y) != 0; }, x_min_v[i], tmp);
 
     // Perform right bound.
     tmp = mid_x;
-    bisect([&](auto v) {
-        return image.pixel(v, mid_y) != 0;
-      }, tmp, x_max_v[i]);
+    bisect([&](auto v) { return image.pixel(v, mid_y) != 0; }, tmp, x_max_v[i]);
 
     // Perform lower bound.
     tmp = mid_y;
-    bisect([&](size_t v) {
-        return image.pixel(mid_x, v) != 0;
-      }, y_min_v[i], tmp);
+    bisect([&](size_t v) { return image.pixel(mid_x, v) != 0; }, y_min_v[i], tmp);
 
     // Perform upper bound.
     tmp = mid_y;
-    bisect([&](auto v) {
-        return image.pixel(mid_x, v) != 0;
-      }, tmp, y_max_v[i]);
+    bisect([&](auto v) { return image.pixel(mid_x, v) != 0; }, tmp, y_max_v[i]);
   }
 
   // Get the max or min of each border's bisection results.
@@ -85,7 +95,8 @@ Box Analyzer::findBorders(const Image& image, size_t bisects_per_side) const
   return bounds;
 }
 
-void Analyzer::sample(const Image& screen, const Box& bounds, const std::vector<BoxSamples>& boxed_samples, std::vector<RGB>& canvas)
+void Analyzer::sample(const Image& screen, const Box& bounds, const std::vector<BoxSamples>& boxed_samples,
+                      std::vector<RGB>& canvas)
 {
   for (size_t box_i = 0; box_i < boxed_samples.size(); box_i++)
   {
@@ -116,24 +127,24 @@ void Analyzer::sample(const Image& screen, const Box& bounds, const std::vector<
     canvas_pixel.R = R * 255 / total;
     canvas_pixel.G = G * 255 / total;
     canvas_pixel.B = B * 255 / total;
-  }  
+  }
 }
 
 std::vector<BoxSamples> Analyzer::makeBoxSamples(const size_t dist_between_samples, const Box& bounds)
 {
   // Get the boxes associated to these bounds.
   auto boxes = Lights::getBoxes(bounds.width(), bounds.height(), horizontal_celldepth_, vertical_celldepth_);
-  std::vector<BoxSamples> res{boxes.size()};
+  std::vector<BoxSamples> res{ boxes.size() };
 
   for (size_t i = 0; i < boxes.size(); i++)
   {
     const auto& box = res[i].box;
     res[i].box = boxes[i];
-    
+
     // now add samples.
-    for (size_t y = box.y_min; y < box.y_max ; y += dist_between_samples)
+    for (size_t y = box.y_min; y < box.y_max; y += dist_between_samples)
     {
-      for (size_t x = box.x_min; x < box.x_max ; x += dist_between_samples)
+      for (size_t x = box.x_min; x < box.x_max; x += dist_between_samples)
       {
         res[i].points.emplace_back(x, y);
       }
@@ -141,7 +152,6 @@ std::vector<BoxSamples> Analyzer::makeBoxSamples(const size_t dist_between_sampl
   }
   return res;
 }
-
 
 void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& image)
 {
@@ -153,9 +163,9 @@ void Analyzer::boxColorizer(const std::vector<RGB>& canvas, Image& image)
     const auto& box = boxes[box_i];
     const auto& color = canvas[box_i];
     // now, we run through the box and fill it with the color.
-    for (size_t y=box.y_min; y < box.y_max; y++)
+    for (size_t y = box.y_min; y < box.y_max; y++)
     {
-      for (size_t x=box.x_min; x < box.x_max; x++)
+      for (size_t x = box.x_min; x < box.x_max; x++)
       {
         image.setPixel(x, y, color.toUint32());
       }

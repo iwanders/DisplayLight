@@ -1,13 +1,31 @@
+/*
+  The MIT License (MIT)
+  Copyright (c) 2018 Ivor Wanders
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
 #include "lights.h"
-#include <vector>
 #include <iostream>
-
+#include <vector>
 
 bool Lights::connect(const std::string& serial_path, size_t baudrate)
 {
   try
   {
-    serial_ = std::make_unique<boost::asio::serial_port>( io_, serial_path);
+    serial_ = std::make_unique<boost::asio::serial_port>(io_, serial_path);
     serial_->set_option(boost::asio::serial_port_base::baud_rate(baudrate));
   }
   catch (boost::system::system_error& e)
@@ -40,7 +58,7 @@ std::vector<Message> Lights::chunker(const std::vector<RGB>& canvas) const
     // Limit the color
     limiter(msg.color.color[index % leds_per_message]);
 
-    if ((index + 1) % leds_per_message == 0) // If message is complete, push it into the vector.
+    if ((index + 1) % leds_per_message == 0)  // If message is complete, push it into the vector.
     {
       res.push_back(msg);
     }
@@ -53,10 +71,9 @@ std::vector<Message> Lights::chunker(const std::vector<RGB>& canvas) const
 
 void Lights::fill(const RGB v) const
 {
-  std::vector<RGB> res{led_count_, v};
+  std::vector<RGB> res{ led_count_, v };
   write(res);
 }
-
 
 void Lights::write(const std::vector<RGB>& canvas) const
 {
@@ -161,6 +178,6 @@ std::vector<Box> Lights::getBoxes(size_t width, size_t height, size_t horizontal
 
 std::vector<RGB> Lights::makeCanvas()
 {
-  std::vector<RGB> canvas{ledCount(), {0, 0, 0}};
+  std::vector<RGB> canvas{ ledCount(), { 0, 0, 0 } };
   return canvas;
 }
