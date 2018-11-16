@@ -61,15 +61,20 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  // Crate the canvas
+  const size_t distance_between_sample_pixels { 15 };
+
+  // Create the canvas
   std::vector<RGB> canvas{ lights.ledCount(), { 0, 0, 0 } };
 
+  Measure m;
+  size_t index = 0;
   while (1)
   {
     // Rate limit the loop.
     limiter.sleep();
 
     // Grab the contents of the screen.
+    m.start();
     bool success = sniff.grabContent();
     if (!success)
     {
@@ -78,8 +83,14 @@ int main(int argc, char* argv[])
     }
     const auto image = sniff.getScreen();
     const Box bounds = analyzer.findBorders(image);
-    const auto samplepoints = analyzer.makeBoxSamples(15, bounds);
+    const auto samplepoints = analyzer.makeBoxSamples(distance_between_sample_pixels, bounds);
     analyzer.sample(image, bounds, samplepoints, canvas);
     lights.write(canvas);
+    m.stop();
+    index++;
+    if (index % 100 == 0)
+    {
+      std::cout << "Avg: " << m.average() << std::endl;
+    }
   }
 }
