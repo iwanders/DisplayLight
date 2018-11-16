@@ -2,23 +2,10 @@
 #include <chrono>
 #include <fstream>
 #include "pixelsniff.h"
+#include "timing.h"
 
 int main(int argc, char* argv[])
 {
-  // Some helper functions for timing.
-  auto start = std::chrono::steady_clock::now();
-  auto tic = [&start]() { start = std::chrono::steady_clock::now(); };
-  auto toc = [&start](bool print = false) {
-    auto end = std::chrono::steady_clock::now();
-    auto diff = end - start;
-    size_t count = std::chrono::duration<double, std::micro>(diff).count();
-    if (print)
-    {
-      std::cout << count << " us" << std::endl;
-    }
-    return count;
-  };
-
   PixelSniffer sniff;
   sniff.connect();
 
@@ -34,19 +21,19 @@ int main(int argc, char* argv[])
   if ((std::string(argv[1]) == "benchmark"))
   {
     sniff.selectRootWindow();
+    Measure time;
     size_t count = 1000;
-    size_t cumulative = 0;
     for (size_t c = 0; c < count; c++)
     {
-      tic();
-      bool res = sniff.grabContent();
-      if (!res)
+      time.start();
+      bool success = sniff.grabContent();
+      if (!success)
       {
         std::cerr << "Failed to grab" << std::endl;
       }
-      cumulative += toc();
+      time.stop();
     }
-    std::cout << "Captures done:" << count << " avg: " << double(cumulative) / count << " usec" << std::endl;
+    std::cout << "Captures done:" << count << " avg: " << time.average() << " usec" << std::endl;
   }
 
   // Try grabbing just one window.

@@ -26,6 +26,7 @@ std::vector<Message> Lights::chunker(const std::vector<RGB>& canvas) const
   Message msg;
   msg.type = COLOR;
   msg.color.offset = 0;
+  msg.color.settings = 0;
 
   const size_t leds_per_message = msg.color.leds_per_message;
   for (size_t index = 0; index < canvas.size(); index++)
