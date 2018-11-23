@@ -1,6 +1,8 @@
 DisplayLight
 ============
 
+![Animated gif of DisplayLight](/../master/displaylight.gif "An animated gif of DisplayLight.")
+
 This yet another ambient-light-behind-the-monitor project; it colors the leds mounted behind one's computer monitor with
 the colors as seen on the screen.
 
