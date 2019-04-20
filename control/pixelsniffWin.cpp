@@ -25,6 +25,7 @@
 
 // Behold! Dark magic to solve linker issues.
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3d11.lib")
 // ^- This ensures we link against 'IDXGIFactory1'
 
 std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs()
@@ -72,6 +73,34 @@ void PixelSnifferWin::initAdapter(size_t index)
       std::cout <<  std::endl;
       i++;
     }
+}
+
+void PixelSnifferWin::initDevice()
+{
+  D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
+  HRESULT hr = 0;
+
+  const static D3D_FEATURE_LEVEL featureLevels[] =
+  {
+    D3D_FEATURE_LEVEL_11_0,
+  };
+
+  uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+  ID3D11Device* z;
+  ID3D11DeviceContext* context;
+  
+  hr = D3D11CreateDevice(adapter_.get(), D3D_DRIVER_TYPE_UNKNOWN,
+    NULL, createFlags, featureLevels,
+    sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL),
+    D3D11_SDK_VERSION, &z,
+    &levelUsed, &context);
+
+  if (FAILED(hr))
+    throw std::runtime_error("Failed to create device");
+
+  device_ = releasing(z);
+  device_context_ = releasing(context);
 }
 
 void PixelSnifferWin::printVideoOutput()
@@ -145,35 +174,3 @@ HDC desktopHdc = GetDC(desktop);
   return screen;
 }
 
-
-void PixelSnifferWin::init(size_t index)
-{
-
-/*  std::wstring adapterName;
-  DXGI_ADAPTER_DESC desc;
-  D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
-  HRESULT hr = 0;
-
-
-  uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
-
-  adapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description :
-    L"<unknown>";
-
-  char *adapterNameUTF8;
-  adapterName = std::wstring(&(desc.Description[0]));
-
-
-  hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN,
-    NULL, createFlags, featureLevels,
-    sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL),
-    D3D11_SDK_VERSION, device.Assign(),
-    &levelUsed, context.Assign());
-  if (FAILED(hr))
-    throw UnsupportedHWError("Failed to create device", hr);
-
-  blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
-    (unsigned int)levelUsed);
-    */
-}

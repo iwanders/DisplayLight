@@ -28,8 +28,8 @@ int main(int argc, char* argv[])
 
   sniffer->initAdapter();
   sniffer->initOutput();
+  sniffer->initDevice();
   sniffer->printVideoOutput();
-  //sniffer->init();
   auto& sniff = *sniffer;
   sniff.connect();
 

@@ -77,17 +77,30 @@ public:
 
   std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs();
   void printVideoOutput();
+
+  // One, create an adapter (this is the gfx card?)
   void initAdapter(size_t index=0);
+
+  // Two, initialise / store the output from this card.
   void initOutput(size_t index = 0);
 
-  void init(size_t index);
+  // Three, create a device object and context to work with.
+  void initDevice();
+
+  // Four, create the duplicator.
+  //void initDuplicator();
 
 protected:
   size_t capture_x_;  //!< The x position to grab from.
   size_t capture_y_;  //!< The y position to grab from.
 
-  std::shared_ptr< IDXGIFactory1> factory_;
-  std::shared_ptr< IDXGIAdapter1> adapter_;
+  // From the graphics card to the monitor output.
+  std::shared_ptr<IDXGIFactory1> factory_;
+  std::shared_ptr<IDXGIAdapter1> adapter_;
   std::shared_ptr<IDXGIOutput> adapter_output_;
   
+  // The d3d device and device context we're going to interact with.
+  std::shared_ptr<ID3D11Device> device_;
+  std::shared_ptr<ID3D11DeviceContext> device_context_;
+
 };
