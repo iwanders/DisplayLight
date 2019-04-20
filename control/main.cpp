@@ -23,16 +23,18 @@
 #include "analyzer.h"
 #include "lights.h"
 #include "pixelsniff.h"
+#include "platform.h"
 #include "timing.h"
 
 void printHelp(const std::string& progname)
 {
+
   std::cout << "" << progname << " serial_port_path [framerate_in_hz]" << std::endl;
 }
 
 int main(int argc, char* argv[])
 {
-  PixelSniffer sniff;
+  PixelSniffer sniff = getSniffer();
   sniff.connect();
   sniff.selectRootWindow();
 

@@ -17,36 +17,18 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#include <chrono>
-#include "pixelsniff.h"
-#include <fstream>
-#include <sstream>
+#include "platform.h"
 
-PixelSniffer::PixelSniffer()
+#ifdef WIN32
+PixelSniffer getSniffer()
 {
+  return PixelSniffer();
+}
+#else
+#include "pixelsniffX11.h"
+PixelSniffer getSniffer()
+{
+  return PixelSnifferX11();
 }
 
-void PixelSniffer::connect()
-{
-}
-
-bool PixelSniffer::selectRootWindow()
-{
-  return prepareCapture();  // default to entire screen.
-}
-
-bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
-{
-  return false;
-}
-
-bool PixelSniffer::grabContent() const
-{
-  return false;
-}
-
-Image PixelSniffer::getScreen() const
-{
-  auto screen = Image{ Image::Bitmap{}};
-  return screen;
-}
+#endif

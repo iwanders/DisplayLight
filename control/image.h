@@ -17,13 +17,12 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef BASE_IMAGE_H
+#define BASE_IMAGE_H
 
 #include <memory>
 #include <vector>
-
-#include <X11/Xresource.h>
+#include <cstdint>
 
 /**
  * @brief This image class is either backed by an XImage or by a bitmap of uint32's.
@@ -31,71 +30,58 @@
  */
 class Image
 {
-  size_t width_;   //!< Width of the image.
-  size_t height_;  //!< Height of the image.
-
-  bool shared_memory_{ false };  //!< True if it uses the XImage, false if it uses the bitmap.
-
   // bitmap backend
   std::vector<std::vector<uint32_t>> map_;  //!< Bitmap representation of the data.
-
-  // shared memory backend.
-  std::shared_ptr<XImage> ximage_;  //!< XImage represents the data.
-
   Image() = default;
-
+  std::size_t width_;
+  std::size_t height_;
 public:
   using Bitmap = std::vector<std::vector<uint32_t>>;
-
-  /**
-   * @brief Construct a Image from an XImage.
-   */
-  Image(std::shared_ptr<XImage> image);
-
   /**
    * @brief Constructs a Image from a bitmap.
    */
   Image(Bitmap map);
+  virtual ~Image() = default;
 
   /**
    * @brief Ensure a bitmap is used as data storage.
    */
-  void convertToBitmap();
+  virtual void convertToBitmap();
 
   /**
    * @brief Return the width of the image.
    */
-  size_t getWidth() const;
+  virtual size_t getWidth() const;
 
   /**
    * @brief Return the height of the image.
    */
-  size_t getHeight() const;
+  virtual size_t getHeight() const;
 
   /**
    * @brief Return the value of a pixel on the image. Format is 0x00RRGGBB
    */
-  uint32_t pixel(size_t x, size_t y) const;
+  virtual uint32_t pixel(size_t x, size_t y) const;
 
   /**
    * @brief Writes a certain value to a position.
    */
-  void setPixel(size_t x, size_t y, uint32_t color);
+  virtual void setPixel(size_t x, size_t y, uint32_t color);
 
   /**
    * @brief Create a vertical line on the image with the provided color.
    */
-  void hLine(size_t y, uint32_t color);
+  virtual void hLine(size_t y, uint32_t color);
 
   /**
    * @brief Create a horizontal line on the image with the provided color.
    */
-  void vLine(size_t x, uint32_t color);
+  virtual void vLine(size_t x, uint32_t color);
 
   /**
    * @brief Get the ppm presentation of the data in this image.
    */
-  std::string imageToPPM();
+  std::string imageToPPM() const;
 
   /**
    * @brief Write contants to a file in binary format.
@@ -114,5 +100,6 @@ public:
    */
   static Image readContents(const std::string& filename);
 };
+
 
 #endif

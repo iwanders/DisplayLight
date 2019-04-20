@@ -17,36 +17,9 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#include <chrono>
+#pragma once
+
 #include "pixelsniff.h"
-#include <fstream>
-#include <sstream>
 
-PixelSniffer::PixelSniffer()
-{
-}
+PixelSniffer getSniffer();
 
-void PixelSniffer::connect()
-{
-}
-
-bool PixelSniffer::selectRootWindow()
-{
-  return prepareCapture();  // default to entire screen.
-}
-
-bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
-{
-  return false;
-}
-
-bool PixelSniffer::grabContent() const
-{
-  return false;
-}
-
-Image PixelSniffer::getScreen() const
-{
-  auto screen = Image{ Image::Bitmap{}};
-  return screen;
-}
