@@ -34,9 +34,9 @@ void printHelp(const std::string& progname)
 
 int main(int argc, char* argv[])
 {
-  PixelSniffer sniff = getSniffer();
-  sniff.connect();
-  sniff.selectRootWindow();
+  PixelSniffer::Ptr sniff = getSniffer();
+  sniff->connect();
+  sniff->selectRootWindow();
 
   Lights lights;
   Analyzer analyzer;
@@ -67,6 +67,13 @@ int main(int argc, char* argv[])
 
   // Create the canvas
   std::vector<RGB> canvas{ lights.ledCount(), { 0, 0, 0 } };
+  while (1)
+  {
+
+    limiter.sleep();
+    std::vector<RGB> canvasz{ lights.ledCount(), { 200, 200, 200 } };
+    lights.write(canvasz);
+  }
 
   while (1)
   {
@@ -74,13 +81,13 @@ int main(int argc, char* argv[])
     limiter.sleep();
 
     // Grab the contents of the screen.
-    bool success = sniff.grabContent();
+    bool success = sniff->grabContent();
     if (!success)
     {
       std::cerr << "Could not grab desired contents. Quitting." << std::endl;
       return 1;
     }
-    const auto image = sniff.getScreen();
+    const auto image = sniff->getScreen();
     const Box bounds = analyzer.findBorders(image);
     const auto samplepoints = analyzer.makeBoxSamples(distance_between_sample_pixels, bounds);
     analyzer.sample(image, bounds, samplepoints, canvas);

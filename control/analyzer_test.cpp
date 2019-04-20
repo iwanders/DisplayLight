@@ -19,7 +19,7 @@
 */
 #include "analyzer.h"
 #include <fstream>
-#include "pixelsniff.h"
+#include "platform.h"
 
 int main(int argc, char* argv[])
 {
@@ -34,16 +34,16 @@ int main(int argc, char* argv[])
   if ((std::string(argv[1]) == "capture"))
   {
     // Create the pixel sniffer.
-    PixelSniffer sniff;
-    sniff.connect();
-    sniff.selectRootWindow();
-    bool success = sniff.grabContent();
+    PixelSniffer::Ptr sniff = getSniffer();
+    sniff->connect();
+    sniff->selectRootWindow();
+    bool success = sniff->grabContent();
     if (!success)
     {
       std::cerr << "Failed to grab content" << std::endl;
       return 1;
     }
-    auto image = sniff.getScreen();
+    auto image = sniff->getScreen();
     image.writeContents(argv[2]);
   }
 

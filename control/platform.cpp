@@ -20,15 +20,16 @@
 #include "platform.h"
 
 #ifdef WIN32
-PixelSniffer getSniffer()
+#include "pixelsniffWin.h"
+PixelSniffer::Ptr getSniffer()
 {
-  return PixelSniffer();
+  return std::make_shared<PixelSnifferWin>();
 }
 #else
 #include "pixelsniffX11.h"
-PixelSniffer getSniffer()
+PixelSniffer::Ptr getSniffer()
 {
-  return PixelSnifferX11();
+  return std::make_shared <PixelSnifferX11>();
 }
 
 #endif

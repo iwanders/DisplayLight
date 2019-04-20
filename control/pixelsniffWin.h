@@ -17,45 +17,54 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#ifndef PIXELSNIFF_H
-#define PIXELSNIFF_H
+#pragma once
 
-#include <iostream>
-#include <map>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <vector>
-
+#include "pixelsniff.h"
 #include "image.h"
+#include <windows.h>
+#include <Dxgi.h>
+#include <D3dcommon.h>
+#include <D3d11.h>
+#include <Sysinfoapi.h>
+#include <memory>
 
-class PixelSniffer
+/*
+This looks like the ultimate application for https://docs.microsoft.com/en-us/windows/desktop/direct3ddxgi/desktop-dup-api
+*/
+
+template <typename T>
+std::shared_ptr<T> releasing(T* z)
+{
+  return std::shared_ptr<T>(z, [](T* z) {z->Release(); });
+}
+
+class PixelSnifferWin : public PixelSniffer
 {
 public:
-  using Ptr = std::shared_ptr<PixelSniffer>;
-  PixelSniffer();
+  using Ptr = std::shared_ptr<PixelSnifferWin>;
+  PixelSnifferWin();
 
   /**
    * @brief Connect the X context, get display pointer. Check if the shared memory extension is present.
    */
-  virtual void connect();
+  void connect();
 
   /**
    * @brief Select the root window to capture from.
    * @return False if an error occured.
    */
-  virtual bool selectRootWindow();
+  bool selectRootWindow();
 
   /**
    * @brief Grab a snapshot of the capture area.
    */
-  virtual bool grabContent() const;
+  bool grabContent() const;
 
   /**
    * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
    * @return A screen backed by the shared XImage in this class.
    */
-  virtual Image getScreen() const;
+  Image getScreen() const;
 
   /**
    * @brief Prepares the capture area in the window.
@@ -64,7 +73,21 @@ public:
    * @param width The width of segment to receive, if 0 the window width if used.
    * @param height The height of segment to receive, if 0 the window height if used.
    */
-  virtual bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
-};
+  bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
 
-#endif
+  std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs();
+  void printVideoOutput();
+  void initAdapter(size_t index=0);
+  void initOutput(size_t index = 0);
+
+  void init(size_t index);
+
+protected:
+  size_t capture_x_;  //!< The x position to grab from.
+  size_t capture_y_;  //!< The y position to grab from.
+
+  std::shared_ptr< IDXGIFactory1> factory_;
+  std::shared_ptr< IDXGIAdapter1> adapter_;
+  std::shared_ptr<IDXGIOutput> adapter_output_;
+  
+};

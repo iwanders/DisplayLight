@@ -21,5 +21,5 @@
 
 #include "pixelsniff.h"
 
-PixelSniffer getSniffer();
+PixelSniffer::Ptr getSniffer();
 

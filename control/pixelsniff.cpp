@@ -32,16 +32,19 @@ void PixelSniffer::connect()
 
 bool PixelSniffer::selectRootWindow()
 {
+  std::cout << "Pixelsniffer root" << std::endl;
   return prepareCapture();  // default to entire screen.
 }
 
 bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
 {
+  std::cout << "Pixelsniffer prepareCapture" << std::endl;
   return false;
 }
 
 bool PixelSniffer::grabContent() const
 {
+  std::cout << "Pixelsniffer grabContent" << std::endl;
   return false;
 }
 
