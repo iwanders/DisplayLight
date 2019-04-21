@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
       return 1;
     }
     const auto image = sniff->getScreen();
-    const Box bounds = analyzer.findBorders(image);
+    const Box bounds = analyzer.findBorders(*image);
     const auto samplepoints = analyzer.makeBoxSamples(distance_between_sample_pixels, bounds);
-    analyzer.sample(image, bounds, samplepoints, canvas);
+    analyzer.sample(*image, bounds, samplepoints, canvas);
     lights.write(canvas);
   }
 }

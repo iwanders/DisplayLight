@@ -23,6 +23,8 @@
 #include <exception>
 #include <sstream>
 
+#include "imageWin.h"
+
 // Behold! Dark magic to solve linker issues.
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
@@ -285,60 +287,8 @@ bool PixelSnifferWin::grabContent()
 
 
 
-Image PixelSnifferWin::getScreen() const
+Image::Ptr PixelSnifferWin::getScreen() const
 {
-  std::cout << "Before save, image: " << image_.get() << std::endl;
-  
-
-
-  // map the texture
-  ID3D11Texture2D* mappedTexture;
-  D3D11_MAPPED_SUBRESOURCE mapInfo;
-  HRESULT hr = device_context_->Map(
-    image_.get(),
-    0,  // Subresource
-    D3D11_MAP_READ,
-    0,  // MapFlags
-    &mapInfo);
-
-  /*
-
-    // map the texture
-    ComPtr<ID3D11Texture2D> mappedTexture;
-    D3D11_MAPPED_SUBRESOURCE mapInfo;
-    mapInfo.RowPitch;
-    hr = d3dContext->Map(
-            Texture,
-            0,  // Subresource
-            D3D11_MAP_READ,
-            0,  // MapFlags
-            &mapInfo);
-            ...
-
-  https://github.com/Microsoft/graphics-driver-samples/blob/master/render-only-sample/rostest/util.cpp#L396-L400
-
-        hr = frameEncode->WritePixels(
-                desc.Height,
-                mapInfo.RowPitch,
-                desc.Height * mapInfo.RowPitch,
-                reinterpret_cast<BYTE*>(mapInfo.pData));
-  */
-  D3D11_TEXTURE2D_DESC desc;
-  image_->GetDesc(&desc);
-  auto res = Image::Bitmap{};
-  for (size_t y = 0; y < desc.Height; y++)
-  {
-    res.push_back({});
-    for (size_t x = 0; x < desc.Width; x++)
-    {
-      auto z = reinterpret_cast<std::uint8_t*>(mapInfo.pData);
-      z = &(z[y * mapInfo.RowPitch + x * 4]);
-      res.back().push_back(*reinterpret_cast<std::uint32_t*>(z));
-    }
-  }
-
-  std::cout << "Getscreen from snifwin" << std::endl;
-  auto screen = Image(res);
-  return screen;
+  return std::make_shared<ImageWin>(image_);
 }
 

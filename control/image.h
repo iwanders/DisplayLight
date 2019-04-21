@@ -30,12 +30,14 @@
  */
 class Image
 {
+protected:
   // bitmap backend
   std::vector<std::vector<uint32_t>> map_;  //!< Bitmap representation of the data.
   Image() = default;
   std::size_t width_;
   std::size_t height_;
 public:
+  using Ptr = std::shared_ptr<Image>;
   using Bitmap = std::vector<std::vector<uint32_t>>;
   /**
    * @brief Constructs a Image from a bitmap.

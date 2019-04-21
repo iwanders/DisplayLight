@@ -26,12 +26,19 @@ int main(int argc, char* argv[])
 {
   PixelSnifferWin::Ptr sniffer = std::make_shared<PixelSnifferWin>();
 
+  std::cout << "initAdapter " << std::endl;
   sniffer->initAdapter();
+  std::cout << "initOutput " << std::endl;
   sniffer->initOutput();
+  std::cout << "initDevice " << std::endl;
   sniffer->initDevice();
+  std::cout << "initDuplicator " << std::endl;
   sniffer->initDuplicator();
+  std::cout << "printVideoOutput " << std::endl;
   sniffer->printVideoOutput();
+  std::cout << "grabContent " << std::endl;
   sniffer->grabContent();
+  std::cout << "getScreen " << std::endl;
   sniffer->getScreen();
   auto& sniff = *sniffer;
   sniff.connect();
@@ -54,7 +61,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-      sniff.getScreen().writeContents(argv[2]);
+      sniff.getScreen()->writeContents(argv[2]);
     }
     return 0;
   }

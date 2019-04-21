@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
       return 1;
     }
     auto image = sniff->getScreen();
-    image.writeContents(argv[2]);
+    image->writeContents(argv[2]);
   }
 
   // Test border detection.

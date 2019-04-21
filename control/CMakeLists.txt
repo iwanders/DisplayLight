@@ -11,8 +11,11 @@ if (WIN32)
   add_definitions(-DWIN32  -D_WIN32_WINNT=0x0A00)
   add_library(pixelsniffWin pixelsniffWin.cpp)
   target_link_libraries(pixelsniffWin pixelsniff)
-  LIST(APPEND platform_link pixelsniffWin image)
 
+  add_library(imageWin  imageWin.cpp)
+  target_link_libraries(imageWin image)
+
+  LIST(APPEND platform_link pixelsniffWin image imageWin)
 
   add_executable(snifftestWin snifftestWin.cpp)
   target_link_libraries(snifftestWin platform ${platform_link})

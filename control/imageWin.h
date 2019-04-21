@@ -17,54 +17,48 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#ifndef PIXELSNIFF_H
-#define PIXELSNIFF_H
+#ifndef ImageWin_H
+#define ImageWin_H
 
-#include <iostream>
-#include <map>
 #include <memory>
-#include <sstream>
-#include <string>
 #include <vector>
 
 #include "image.h"
+#include "pixelsniffWin.h"
 
-class PixelSniffer
+/**
+ * @brief This ImageWin class is either backed by an XImageWin or by a bitmap of uint32's.
+ *        If written to, it is converted to a bitmap, it's size is immutable.
+ */
+class ImageWin : public Image
 {
+  bool shared_memory_{ false };  //!< True if it uses the XImageWin, false if it uses the bitmap.
+
+  // shared memory backend.
+  std::shared_ptr<ID3D11Texture2D> image_;
+  D3D11_MAPPED_SUBRESOURCE mapped_;
+
+  ImageWin() = default;
+
 public:
-  using Ptr = std::shared_ptr<PixelSniffer>;
-  PixelSniffer();
+  using Bitmap = std::vector<std::vector<uint32_t>>;
 
   /**
-   * @brief Connect the X context, get display pointer. Check if the shared memory extension is present.
+   * @brief Construct a ImageWin from an XImageWin.
    */
-  virtual void connect();
+  ImageWin(std::shared_ptr<ID3D11Texture2D> ImageWin);
+
+  ImageWin(Bitmap v);
 
   /**
-   * @brief Select the root window to capture from.
-   * @return False if an error occured.
+   * @brief Ensure a bitmap is used as data storage.
    */
-  virtual bool selectRootWindow();
+  void convertToBitmap();
 
   /**
-   * @brief Grab a snapshot of the capture area.
+   * @brief Return the value of a pixel on the ImageWin. Format is 0x00RRGGBB
    */
-  virtual bool grabContent() const;
-
-  /**
-   * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
-   * @return A screen backed by the shared XImage in this class.
-   */
-  virtual Image::Ptr getScreen() const;
-
-  /**
-   * @brief Prepares the capture area in the window.
-   * @param x The x coordinate in the window (starts left)
-   * @param y The y coordinate in the window (starts top)
-   * @param width The width of segment to receive, if 0 the window width if used.
-   * @param height The height of segment to receive, if 0 the window height if used.
-   */
-  virtual bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
+  uint32_t pixel(size_t x, size_t y) const;
 };
 
 #endif

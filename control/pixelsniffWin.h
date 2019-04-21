@@ -67,7 +67,7 @@ public:
    * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
    * @return A screen backed by the shared XImage in this class.
    */
-  Image getScreen() const;
+  Image::Ptr getScreen() const;
 
   /**
    * @brief Prepares the capture area in the window.
