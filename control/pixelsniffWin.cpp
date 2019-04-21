@@ -204,7 +204,7 @@ bool PixelSnifferWin::grabContent()
     // or a d3d11 instance starts, in that case we have to recreate the duplicator.
     std::cerr << "Lost access, trying to reclaim." << std::endl;
     initDuplicator();
-    return grabContent(); // just try again.
+    return grabContent();  // just try again.
   }
   else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
   {
