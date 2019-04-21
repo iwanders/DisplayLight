@@ -20,8 +20,8 @@
 #ifndef PIXELSNIFFX11_H
 #define PIXELSNIFFX11_H
 
-#include "pixelsniff.h"
 #include "imageX11.h"
+#include "pixelsniff.h"
 
 // X11
 #include <X11/Xatom.h>
@@ -37,7 +37,6 @@
 #include <X11/extensions/XShm.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-
 
 /**
  * @brief Holds information about one specific window on the X11 desktop.
@@ -89,13 +88,13 @@ public:
   /**
    * @brief Grab a snapshot of the capture area.
    */
-  bool grabContent() const;
+  bool grabContent();
 
   /**
    * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
    * @return A screen backed by the shared XImage in this class.
    */
-  Image getScreen() const;
+  Image::Ptr getScreen();
 
   /**
    * @brief Return the current list of windows that are known.

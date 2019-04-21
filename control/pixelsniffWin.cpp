@@ -19,8 +19,8 @@
 */
 #include "pixelsniffWin.h"
 #include <chrono>
-#include <fstream>
 #include <exception>
+#include <fstream>
 #include <sstream>
 
 #include "imageWin.h"
@@ -32,8 +32,9 @@
 
 std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs()
 {
-   //https://docs.microsoft.com/en-us/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter-enumoutputs
-  //EnumOutputs first returns the output on which the desktop primary is displayed. This output corresponds with an index of zero. EnumOutputs then returns other outputs.
+  // https://docs.microsoft.com/en-us/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter-enumoutputs
+  // EnumOutputs first returns the output on which the desktop primary is displayed. This output corresponds with an
+  // index of zero. EnumOutputs then returns other outputs.
   size_t i = 0;
   IDXGIOutput* pOutput;
   std::vector<std::shared_ptr<IDXGIOutput>> vOutputs;
@@ -47,34 +48,35 @@ std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs
 
 void PixelSnifferWin::initAdapter(size_t index)
 {
-    IDXGIFactory1* factory;
-    IDXGIAdapter1* adapter;
-    HRESULT hr;
-    UINT i = 0;
+  IDXGIFactory1* factory;
+  IDXGIAdapter1* adapter;
+  HRESULT hr;
+  UINT i = 0;
 
-    IID factoryIID = __uuidof(IDXGIFactory1);
+  IID factoryIID = __uuidof(IDXGIFactory1);
 
-    hr = CreateDXGIFactory1(factoryIID, (void**)&factory);
+  hr = CreateDXGIFactory1(factoryIID, (void**)&factory);
+  if (FAILED(hr))
+    throw std::runtime_error("Failed to create DXGIFactory");
+
+  while (factory->EnumAdapters1(i, &adapter) == S_OK)
+  {
+    DXGI_ADAPTER_DESC desc;
+    hr = adapter->GetDesc(&desc);
+    std::cout << "Adapter " << i << " has " << desc.DedicatedVideoMemory << " bytes of memory. ";
+
     if (FAILED(hr))
-      throw std::runtime_error("Failed to create DXGIFactory");
+      throw std::runtime_error("Failed to retrieve description of adapter.");
 
-    while (factory->EnumAdapters1(i, &adapter) == S_OK) {
-      DXGI_ADAPTER_DESC desc;
-      hr = adapter->GetDesc(&desc);
-      std::cout << "Adapter " << i << " has " << desc.DedicatedVideoMemory << " bytes of memory. ";
-
-      if (FAILED(hr))
-        throw std::runtime_error("Failed to retrieve description of adapter.");
-
-      if (i == index)
-      {
-        std::cout << " Selecting this!";
-        adapter_ = releasing(adapter);
-        factory_ = releasing(factory);
-      }
-      std::cout <<  std::endl;
-      i++;
+    if (i == index)
+    {
+      std::cout << " Selecting this!";
+      adapter_ = releasing(adapter);
+      factory_ = releasing(factory);
     }
+    std::cout << std::endl;
+    i++;
+  }
 }
 
 void PixelSnifferWin::initDevice()
@@ -82,27 +84,23 @@ void PixelSnifferWin::initDevice()
   D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
   HRESULT hr = 0;
 
-  const static D3D_FEATURE_LEVEL featureLevels[] =
-  {
-  D3D_FEATURE_LEVEL_11_0,
-  D3D_FEATURE_LEVEL_10_1,
-  D3D_FEATURE_LEVEL_10_0,
-  D3D_FEATURE_LEVEL_9_3,
+  const static D3D_FEATURE_LEVEL featureLevels[] = {
+    D3D_FEATURE_LEVEL_11_0,
+    D3D_FEATURE_LEVEL_10_1,
+    D3D_FEATURE_LEVEL_10_0,
+    D3D_FEATURE_LEVEL_9_3,
   };
 
   uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
 
   createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 
   ID3D11Device* z;
   ID3D11DeviceContext* context;
-  
-  hr = D3D11CreateDevice(adapter_.get(), D3D_DRIVER_TYPE_UNKNOWN,
-    NULL, createFlags, featureLevels,
-    sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL),
-    D3D11_SDK_VERSION, &z,
-    &levelUsed, &context);
+
+  hr =
+      D3D11CreateDevice(adapter_.get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, createFlags, featureLevels,
+                        sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL), D3D11_SDK_VERSION, &z, &levelUsed, &context);
 
   if (FAILED(hr))
     throw std::runtime_error("Failed to create device");
@@ -118,7 +116,7 @@ void PixelSnifferWin::printVideoOutput()
   {
     DXGI_OUTPUT_DESC z;
     out->GetDesc(&z);
-      std::cout << "z: " << z.DeviceName << "  " << z.Monitor << std::endl;
+    std::cout << "z: " << z.DeviceName << "  " << z.Monitor << std::endl;
   }
 }
 
@@ -138,7 +136,7 @@ void PixelSnifferWin::initDuplicator()
 
   HRESULT hr;
 
-  hr = adapter_output_->QueryInterface(__uuidof(IDXGIOutput1),    (void**)&output1);
+  hr = adapter_output_->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
   if (FAILED(hr))
     throw std::runtime_error("Failed to query IDXGIOutput1");
 
@@ -155,12 +153,10 @@ void PixelSnifferWin::initDuplicator()
   duplicator_ = releasing(z);
   duplicator_output_ = releasing(output1);
 
-  //DXGI_OUTDUPL_DESC out_desc;
-  //duplicator_->GetDesc(&out_desc);
-  //std::cout << "Already in mem: " << out_desc.DesktopImageInSystemMemory << " " << std::endl;
+  // DXGI_OUTDUPL_DESC out_desc;
+  // duplicator_->GetDesc(&out_desc);
+  // std::cout << "Already in mem: " << out_desc.DesktopImageInSystemMemory << " " << std::endl;
 }
-
-
 
 PixelSnifferWin::PixelSnifferWin()
 {
@@ -178,7 +174,6 @@ bool PixelSnifferWin::selectRootWindow()
   return true;
 }
 
-
 bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t height)
 {
   capture_x_ = x;
@@ -187,7 +182,6 @@ bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t he
   return true;
 }
 
-
 bool PixelSnifferWin::grabContent()
 {
   DXGI_OUTDUPL_FRAME_INFO info;
@@ -195,27 +189,30 @@ bool PixelSnifferWin::grabContent()
   IDXGIResource* res;
   HRESULT hr;
 
-  if (duplicator_ == nullptr) {
+  if (duplicator_ == nullptr)
+  {
     return false;
   }
 
   hr = duplicator_->AcquireNextFrame(100, &info, &res);
-  
-  if (hr == DXGI_ERROR_ACCESS_LOST) {
+
+  if (hr == DXGI_ERROR_ACCESS_LOST)
+  {
     std::cerr << "Lost access, trying to reclaim." << std::endl;
     initDuplicator();
     return grabContent();
   }
   else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
   {
-    //std::cout << "Wait timeout " << std::endl;
+    // std::cout << "Wait timeout " << std::endl;
     _com_error err(hr);
     LPCTSTR errMsg = err.ErrorMessage();
-    //std::cout << "HR: " << errMsg << std::endl;
+    // std::cout << "HR: " << errMsg << std::endl;
     duplicator_->ReleaseFrame();
     if (image_ != nullptr)
     {
-      return true; // we have something to deliver, just return like we got the image, even though it's an old image it's up to date.
+      return true;  // we have something to deliver, just return like we got the image, even though it's an old image
+                    // it's up to date.
     }
     return false;
   }
@@ -225,7 +222,7 @@ bool PixelSnifferWin::grabContent()
     return false;
   }
 
-  hr = res->QueryInterface(__uuidof(ID3D11Texture2D), (void**) &frame);
+  hr = res->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&frame);
 
   if (FAILED(hr))
   {
@@ -239,12 +236,13 @@ bool PixelSnifferWin::grabContent()
 
   D3D11_TEXTURE2D_DESC img_desc;
 
-  if ((image_ != nullptr)) // only retrieve data if image exists.
+  if ((image_ != nullptr))  // only retrieve data if image exists.
   {
     image_->GetDesc(&img_desc);
   }
-  
-  if ((image_ == nullptr) || (img_desc.Width != tex_desc.Width) || (img_desc.Height != tex_desc.Height))  // image is different size.
+
+  if ((image_ == nullptr) || (img_desc.Width != tex_desc.Width) ||
+      (img_desc.Height != tex_desc.Height))  // image is different size.
   {
     // Need to make a new image here now...
     ID3D11Texture2D* img;
@@ -260,7 +258,6 @@ bool PixelSnifferWin::grabContent()
 
     hr = device_->CreateTexture2D(&desc, nullptr, &img);
 
-
     _com_error err(hr);
     LPCTSTR errMsg = err.ErrorMessage();
     std::cout << "Image is now: " << img << " Result: " << errMsg << std::endl;
@@ -270,14 +267,14 @@ bool PixelSnifferWin::grabContent()
   // Image is now guaranteed to be good. Copy it.
   device_context_->CopyResource(image_.get(), frame);
   duplicator_->ReleaseFrame();
-  
+
   return true;
 }
 
-
 Image::Ptr PixelSnifferWin::getScreen()
 {
-  // Need to make a new image here now, because we can't copy into mapped images, so we need to ensure we hand off a fresh image.
+  // Need to make a new image here now, because we can't copy into mapped images, so we need to ensure we hand off a
+  // fresh image.
   ID3D11Texture2D* img;
   D3D11_TEXTURE2D_DESC desc = {};
 
@@ -301,4 +298,3 @@ Image::Ptr PixelSnifferWin::getScreen()
   auto imgz = releasing(img);
   return std::make_shared<ImageWin>(imgz);
 }
-

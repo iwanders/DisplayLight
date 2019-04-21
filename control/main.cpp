@@ -17,9 +17,9 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
+#include <chrono>
 #include <iostream>
 #include <vector>
-#include <chrono>
 
 #include "analyzer.h"
 #include "lights.h"
@@ -29,7 +29,6 @@
 
 void printHelp(const std::string& progname)
 {
-
   std::cout << "" << progname << " serial_port_path [framerate_in_hz]" << std::endl;
 }
 
@@ -79,7 +78,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  const size_t distance_between_sample_pixels { 15 };
+  const size_t distance_between_sample_pixels{ 15 };
 
   // Create the canvas
   std::vector<RGB> canvas{ lights.ledCount(), { 0, 0, 0 } };

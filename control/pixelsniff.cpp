@@ -17,8 +17,8 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#include <chrono>
 #include "pixelsniff.h"
+#include <chrono>
 #include <fstream>
 #include <sstream>
 

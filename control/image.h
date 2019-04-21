@@ -20,9 +20,9 @@
 #ifndef BASE_IMAGE_H
 #define BASE_IMAGE_H
 
+#include <cstdint>
 #include <memory>
 #include <vector>
-#include <cstdint>
 
 /**
  * @brief This image class is either backed by an XImage or by a bitmap of uint32's.
@@ -36,6 +36,7 @@ protected:
   Image() = default;
   std::size_t width_;
   std::size_t height_;
+
 public:
   using Ptr = std::shared_ptr<Image>;
   using Bitmap = std::vector<std::vector<uint32_t>>;
@@ -102,6 +103,5 @@ public:
    */
   static Image readContents(const std::string& filename);
 };
-
 
 #endif

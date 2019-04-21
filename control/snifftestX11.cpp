@@ -19,12 +19,12 @@
 */
 #include <chrono>
 #include <fstream>
-#include "pixelsniff.h"
+#include "pixelsniffX11.h"
 #include "timing.h"
 
 int main(int argc, char* argv[])
 {
-  PixelSniffer sniff;
+  PixelSnifferX11 sniff;
   sniff.connect();
 
   if (argc < 2)
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
       output_ppm = argv[3];
     }
     std::ofstream outcontent(output_ppm);
-    outcontent << content.imageToPPM();
+    outcontent << content->imageToPPM();
     outcontent.close();
   }
 }

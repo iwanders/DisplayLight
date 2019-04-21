@@ -30,7 +30,7 @@ PixelSniffer::Ptr getSniffer()
 #include "pixelsniffX11.h"
 PixelSniffer::Ptr getSniffer()
 {
-  return std::make_shared <PixelSnifferX11>();
+  return std::make_shared<PixelSnifferX11>();
 }
 
 #endif

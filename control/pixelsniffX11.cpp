@@ -74,7 +74,7 @@ void WindowInfo::getResolution()
 }
 
 void PixelSnifferX11::recurseWindows(Display* display, Window root_window, std::vector<WindowInfo>& window_info,
-                                  size_t level)
+                                     size_t level)
 {
   window_info.push_back(WindowInfo(display, root_window, level));  // Add the root window as first entry.
   level++;
@@ -116,7 +116,7 @@ static int handleError(Display* display, XErrorEvent* error)
   throw std::runtime_error(error_str);
 }
 
-PixelSnifferX11::PixelSniffer()
+PixelSnifferX11::PixelSnifferX11()
 {
   XSetErrorHandler(handleError);  // Register the error handler.
 }
@@ -200,7 +200,7 @@ bool PixelSnifferX11::prepareCapture(size_t x, size_t y, size_t width, size_t he
   return true;
 }
 
-bool PixelSnifferX11::grabContent() const
+bool PixelSnifferX11::grabContent()
 {
   // Lets disable these for now; they raise and map the window, giving best opportunity to be able to capture.
   // The root window is always mapped though.
@@ -218,8 +218,7 @@ bool PixelSnifferX11::grabContent() const
   return true;
 }
 
-Image PixelSnifferX11::getScreen() const
+Image::Ptr PixelSnifferX11::getScreen()
 {
-  auto screen = ImageX11{ ximage_ };
-  return screen;
+  return std::make_shared<ImageX11>(ximage_);
 }

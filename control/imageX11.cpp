@@ -17,26 +17,23 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#include "ImageX11.h"
+#include "imageX11.h"
 #include <fstream>
 #include <memory>
 #include <sstream>
 #include <vector>
 
-ImageX11::ImageX11(std::shared_ptr<XImageX11> ImageX11)
+ImageX11::ImageX11(std::shared_ptr<XImage> image)
 {
-  xImageX11_ = ImageX11;
+  image_ = image;
   shared_memory_ = true;
-  width_ = xImageX11_->width;
-  height_ = xImageX11_->height;
+  width_ = image_->width;
+  height_ = image_->height;
 }
 
-ImageX11::ImageX11(Bitmap map)
+ImageX11::ImageX11(Bitmap map) : Image(map)
 {
-  map_ = map;
   shared_memory_ = false;
-  width_ = map.front().size();
-  height_ = map.size();
 }
 
 void ImageX11::convertToBitmap()
@@ -44,8 +41,8 @@ void ImageX11::convertToBitmap()
   if (shared_memory_)
   {
     // Perform copy of the data into the map.
-    const uint8_t* data = reinterpret_cast<const uint8_t*>(xImageX11_->data);
-    const uint8_t stride = xImageX11_->bits_per_pixel / 8;
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(image_->data);
+    const uint8_t stride = image_->bits_per_pixel / 8;
 
     map_.resize(height_);
     for (size_t y = 0; y < height_; y++)
@@ -61,22 +58,12 @@ void ImageX11::convertToBitmap()
   }
 }
 
-size_t ImageX11::getWidth() const
-{
-  return width_;
-}
-
-size_t ImageX11::getHeight() const
-{
-  return height_;
-}
-
 uint32_t ImageX11::pixel(size_t x, size_t y) const
 {
   if (shared_memory_)
   {
-    const uint8_t* data = reinterpret_cast<const uint8_t*>(xImageX11_->data);
-    const uint8_t stride = xImageX11_->bits_per_pixel / 8;
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(image_->data);
+    const uint8_t stride = image_->bits_per_pixel / 8;
     return (*reinterpret_cast<const uint32_t*>(data + y * width_ * stride + x * stride)) & 0x00FFFFFF;
   }
   else
@@ -84,10 +71,3 @@ uint32_t ImageX11::pixel(size_t x, size_t y) const
     return map_[y][x];
   }
 }
-
-void ImageX11::setPixel(size_t x, size_t y, uint32_t color)
-{
-  convertToBitmap();
-  map_[y][x] = color;
-}
-

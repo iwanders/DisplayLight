@@ -89,10 +89,11 @@ int main(int argc, char* argv[])
   {
     // Read the file.
     auto image = Image::readContents(argv[2]);
-    
+
     // Write the analysed results as ppm file.
     std::ofstream outcontent(argv[3]);
     outcontent << image.imageToPPM();
     outcontent.close();
-  }  return 0;
+  }
+  return 0;
 }

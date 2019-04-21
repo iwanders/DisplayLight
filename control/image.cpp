@@ -23,14 +23,12 @@
 #include <sstream>
 #include <vector>
 
-
 Image::Image(Bitmap map)
 {
   map_ = map;
   width_ = map.front().size();
   height_ = map.size();
 }
-
 
 void Image::convertToBitmap()
 {
@@ -48,7 +46,7 @@ size_t Image::getHeight() const
 
 uint32_t Image::pixel(size_t x, size_t y) const
 {
-   return map_[y][x];
+  return map_[y][x];
 }
 
 void Image::setPixel(size_t x, size_t y, uint32_t color)
@@ -86,9 +84,9 @@ std::string Image::imageToPPM() const
       uint32_t color = pixel(x, y);
       const int red = (color >> 16) & 0xFF;
       const int green = (color >> 8) & 0xFF;
-      const int blue = (color) & 0xFF;
+      const int blue = (color)&0xFF;
       ss << "" << red << " "
-        << " " << green << " " << blue << " ";
+         << " " << green << " " << blue << " ";
     }
     ss << "\n";
   }

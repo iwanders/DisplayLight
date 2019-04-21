@@ -19,26 +19,27 @@
 */
 #pragma once
 
-#include "pixelsniff.h"
-#include "image.h"
-#include <windows.h>
-#include <Dxgi.h>
-#include <D3dcommon.h>
 #include <D3d11.h>
+#include <D3dcommon.h>
+#include <Dxgi.h>
 #include <Dxgi1_2.h>
 #include <Sysinfoapi.h>
 #include <Wincodec.h>
 #include <comdef.h>
+#include <windows.h>
 #include <memory>
+#include "image.h"
+#include "pixelsniff.h"
 
 /*
-This looks like the ultimate application for https://docs.microsoft.com/en-us/windows/desktop/direct3ddxgi/desktop-dup-api
+This looks like the ultimate application for
+https://docs.microsoft.com/en-us/windows/desktop/direct3ddxgi/desktop-dup-api
 */
 
 template <typename T>
 std::shared_ptr<T> releasing(T* z)
 {
-  return std::shared_ptr<T>(z, [](T* z) {z->Release(); });
+  return std::shared_ptr<T>(z, [](T* z) { z->Release(); });
 }
 
 class PixelSnifferWin : public PixelSniffer
@@ -82,7 +83,7 @@ public:
   void printVideoOutput();
 
   // One, create an adapter (this is the gfx card?)
-  void initAdapter(size_t index=0);
+  void initAdapter(size_t index = 0);
 
   // Two, initialise / store the output from this card.
   void initOutput(size_t index = 0);
@@ -101,7 +102,7 @@ protected:
   std::shared_ptr<IDXGIFactory1> factory_;
   std::shared_ptr<IDXGIAdapter1> adapter_;
   std::shared_ptr<IDXGIOutput> adapter_output_;
-  
+
   // The d3d device and device context we're going to interact with.
   std::shared_ptr<ID3D11Device> device_;
   std::shared_ptr<ID3D11DeviceContext> device_context_;

@@ -23,8 +23,8 @@
 #include <memory>
 #include <vector>
 
-#include <image.h>
 #include <X11/Xresource.h>
+#include "image.h"
 
 /**
  * @brief This ImageX11 class is either backed by an XImageX11 or by a bitmap of uint32's.
@@ -35,7 +35,7 @@ class ImageX11 : public Image
   bool shared_memory_{ false };  //!< True if it uses the XImageX11, false if it uses the bitmap.
 
   // shared memory backend.
-  std::shared_ptr<XImageX11> xImageX11_;  //!< XImageX11 represents the data.
+  std::shared_ptr<XImage> image_;  //!< XImageX11 represents the data.
 
   ImageX11() = default;
 
@@ -45,7 +45,12 @@ public:
   /**
    * @brief Construct a ImageX11 from an XImageX11.
    */
-  ImageX11(std::shared_ptr<XImageX11> ImageX11);
+  ImageX11(std::shared_ptr<XImage> image);
+
+  /**
+   * @brief Bitmap constructor;
+   */
+  ImageX11(Bitmap map);
 
   /**
    * @brief Ensure a bitmap is used as data storage.
@@ -53,35 +58,9 @@ public:
   void convertToBitmap();
 
   /**
-   * @brief Return the width of the ImageX11.
-   */
-  size_t getWidth() const;
-
-  /**
-   * @brief Return the height of the ImageX11.
-   */
-  size_t getHeight() const;
-
-  /**
    * @brief Return the value of a pixel on the ImageX11. Format is 0x00RRGGBB
    */
   uint32_t pixel(size_t x, size_t y) const;
-
-  /**
-   * @brief Writes a certain value to a position.
-   */
-  void setPixel(size_t x, size_t y, uint32_t color);
-
-  /**
-   * @brief Create a vertical line on the ImageX11 with the provided color.
-   */
-  void hLine(size_t y, uint32_t color);
-
-  /**
-   * @brief Create a horizontal line on the ImageX11 with the provided color.
-   */
-  void vLine(size_t x, uint32_t color);
-
 };
 
 #endif

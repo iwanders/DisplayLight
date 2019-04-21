@@ -34,8 +34,7 @@ ImageWin::ImageWin(std::shared_ptr<ID3D11Texture2D> image)
   width_ = desc.Width;
   height_ = desc.Height;
 
-
-  //https://github.com/Microsoft/graphics-driver-samples/blob/master/render-only-sample/rostest/util.cpp#L396-L400
+  // https://github.com/Microsoft/graphics-driver-samples/blob/master/render-only-sample/rostest/util.cpp#L396-L400
   // map the texture
   ID3D11Device* device;
   image_->GetDevice(&device);
@@ -46,12 +45,11 @@ ImageWin::ImageWin(std::shared_ptr<ID3D11Texture2D> image)
   auto dev_clean = releasing(device);
   auto context_clean = releasing(context);
 
-  HRESULT hr = context->Map(
-    image_.get(),
-    0,  // Subresource
-    D3D11_MAP_READ,
-    0,  // MapFlags
-    &mapped_);
+  HRESULT hr = context->Map(image_.get(),
+                            0,  // Subresource
+                            D3D11_MAP_READ,
+                            0,  // MapFlags
+                            &mapped_);
 }
 
 ImageWin::ImageWin(Bitmap map) : Image(map)
