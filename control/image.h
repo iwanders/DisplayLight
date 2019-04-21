@@ -25,8 +25,8 @@
 #include <vector>
 
 /**
- * @brief This image class is either backed by an XImage or by a bitmap of uint32's.
- *        If written to, it is converted to a bitmap, it's size is immutable.
+ * @brief Base class for the images, this is always backed by a vector of vectors. Basically it is
+ * just a big chunk of memory to which we can read and write.
  */
 class Image
 {

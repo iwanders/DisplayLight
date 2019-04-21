@@ -1,6 +1,6 @@
 /*
   The MIT License (MIT)
-  Copyright (c) 2018 Ivor Wanders
+  Copyright (c) 2019 Ivor Wanders
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
   in the Software without restriction, including without limitation the rights
@@ -59,6 +59,7 @@ void PixelSnifferWin::initAdapter(size_t index)
   if (FAILED(hr))
     throw std::runtime_error("Failed to create DXGIFactory");
 
+  // Iterate over the adapters.
   while (factory->EnumAdapters1(i, &adapter) == S_OK)
   {
     DXGI_ADAPTER_DESC desc;
@@ -73,6 +74,10 @@ void PixelSnifferWin::initAdapter(size_t index)
       std::cout << " Selecting this!";
       adapter_ = releasing(adapter);
       factory_ = releasing(factory);
+    }
+    else
+    {
+      releasing(adapter);
     }
     std::cout << std::endl;
     i++;
@@ -93,6 +98,9 @@ void PixelSnifferWin::initDevice()
 
   uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
+  // Enable debugging, this creates fancy output in visual studio if you fail...
+  // Failing for example by copying into a mapped memory. Without this flag
+  // you don't notice that.
   createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 
   ID3D11Device* z;
@@ -155,6 +163,7 @@ void PixelSnifferWin::initDuplicator()
 
   // DXGI_OUTDUPL_DESC out_desc;
   // duplicator_->GetDesc(&out_desc);
+  // If the data was already in memory we could map it directly... but it is not.
   // std::cout << "Already in mem: " << out_desc.DesktopImageInSystemMemory << " " << std::endl;
 }
 
@@ -164,6 +173,7 @@ PixelSnifferWin::PixelSnifferWin()
 
 void PixelSnifferWin::connect()
 {
+  // default setup... make all these devices.
   initAdapter();
   initOutput();
   initDevice();
@@ -176,9 +186,6 @@ bool PixelSnifferWin::selectRootWindow()
 
 bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t height)
 {
-  capture_x_ = x;
-  capture_y_ = y;
-
   return true;
 }
 
@@ -189,18 +196,15 @@ bool PixelSnifferWin::grabContent()
   IDXGIResource* res;
   HRESULT hr;
 
-  if (duplicator_ == nullptr)
-  {
-    return false;
-  }
-
   hr = duplicator_->AcquireNextFrame(100, &info, &res);
 
   if (hr == DXGI_ERROR_ACCESS_LOST)
   {
+    // This can happen when the resolution changes, or when we the context changes / full screen application
+    // or a d3d11 instance starts, in that case we have to recreate the duplicator.
     std::cerr << "Lost access, trying to reclaim." << std::endl;
     initDuplicator();
-    return grabContent();
+    return grabContent(); // just try again.
   }
   else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
   {

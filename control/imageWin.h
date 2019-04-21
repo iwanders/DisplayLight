@@ -1,6 +1,6 @@
 /*
   The MIT License (MIT)
-  Copyright (c) 2018 Ivor Wanders
+  Copyright (c) 2019 Ivor Wanders
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
   in the Software without restriction, including without limitation the rights
@@ -27,16 +27,14 @@
 #include "pixelsniffWin.h"
 
 /**
- * @brief This ImageWin class is either backed by an XImageWin or by a bitmap of uint32's.
- *        If written to, it is converted to a bitmap, it's size is immutable.
+ * @brief This ImageWin class is backed by a mapped ID3D11Texture2D object.
  */
 class ImageWin : public Image
 {
   bool shared_memory_{ false };  //!< True if it uses the XImageWin, false if it uses the bitmap.
 
-  // shared memory backend.
-  std::shared_ptr<ID3D11Texture2D> image_;
-  D3D11_MAPPED_SUBRESOURCE mapped_;
+  std::shared_ptr<ID3D11Texture2D> image_;  //!< Image we got handed during construction.
+  D3D11_MAPPED_SUBRESOURCE mapped_;         //!< Mapped structure of this image.
 
   ImageWin() = default;
 
@@ -48,6 +46,9 @@ public:
    */
   ImageWin(std::shared_ptr<ID3D11Texture2D> ImageWin);
 
+  /*
+   * @brief Constructor to directly create a bitmap.
+   */
   ImageWin(Bitmap v);
 
   /**

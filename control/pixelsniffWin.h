@@ -1,6 +1,6 @@
 /*
   The MIT License (MIT)
-  Copyright (c) 2018 Ivor Wanders
+  Copyright (c) 2019 Ivor Wanders
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
   in the Software without restriction, including without limitation the rights
@@ -32,16 +32,22 @@
 #include "pixelsniff.h"
 
 /*
-This looks like the ultimate application for
+Most information taken from the desktop duplication api, which seems to be superbly applicable.
 https://docs.microsoft.com/en-us/windows/desktop/direct3ddxgi/desktop-dup-api
 */
 
+/**
+ * @brief Helper function to create a shared pointer that cleans up using Microsoft's 'Release()' method.
+ */
 template <typename T>
 std::shared_ptr<T> releasing(T* z)
 {
   return std::shared_ptr<T>(z, [](T* z) { z->Release(); });
 }
 
+/**
+ * @brief PixelSniffer using the Direct 3D DXGI Desktop Duplication api, for Windows (8+?, 10 works...)
+ */
 class PixelSnifferWin : public PixelSniffer
 {
 public:
@@ -49,13 +55,12 @@ public:
   PixelSnifferWin();
 
   /**
-   * @brief Connect the X context, get display pointer. Check if the shared memory extension is present.
+   * @brief Create all objects / devices necessary to start grabbing screens.
    */
   void connect();
 
   /**
-   * @brief Select the root window to capture from.
-   * @return False if an error occured.
+   * @brief Just returns true for this implementation.
    */
   bool selectRootWindow();
 
@@ -65,39 +70,44 @@ public:
   bool grabContent();
 
   /**
-   * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
-   * @return A screen backed by the shared XImage in this class.
+   * @brief Return an image copy of the content that was just grabbed.
    */
   Image::Ptr getScreen();
 
   /**
-   * @brief Prepares the capture area in the window.
-   * @param x The x coordinate in the window (starts left)
-   * @param y The y coordinate in the window (starts top)
-   * @param width The width of segment to receive, if 0 the window width if used.
-   * @param height The height of segment to receive, if 0 the window height if used.
+   * @brief Just returns true for this implementation.
    */
   bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
 
-  std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs();
-  void printVideoOutput();
-
-  // One, create an adapter (this is the gfx card?)
+  /**
+   * @brief Step One, create an adapter (this is the gfx card?)
+   */
   void initAdapter(size_t index = 0);
 
-  // Two, initialise / store the output from this card.
+  /**
+   * @brief Enumerate the video outputs of the created adapter.
+   */
+  std::vector<std::shared_ptr<IDXGIOutput>> PixelSnifferWin::enumerateVideoOutputs();
+
+  //! Print video output information.
+  void printVideoOutput();
+
+  /**
+   * @bief Step Two, initialise / store the output from this card.
+   */
   void initOutput(size_t index = 0);
 
-  // Three, create a device object and context to work with.
+  /**
+   * @bief Step Three, create a device object and context to work with.
+   */
   void initDevice();
 
-  // Four, create the duplicator.
+  /**
+   * @bief Step Four, create the duplicator, if we lose the resource, we need to reinitialise this.
+   */
   void initDuplicator();
 
 protected:
-  size_t capture_x_;  //!< The x position to grab from.
-  size_t capture_y_;  //!< The y position to grab from.
-
   // From the graphics card to the monitor output.
   std::shared_ptr<IDXGIFactory1> factory_;
   std::shared_ptr<IDXGIAdapter1> adapter_;
