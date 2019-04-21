@@ -82,10 +82,16 @@ void PixelSnifferWin::initDevice()
 
   const static D3D_FEATURE_LEVEL featureLevels[] =
   {
-    D3D_FEATURE_LEVEL_11_0,
+  D3D_FEATURE_LEVEL_11_0,
+  D3D_FEATURE_LEVEL_10_1,
+  D3D_FEATURE_LEVEL_10_0,
+  D3D_FEATURE_LEVEL_9_3,
   };
 
   uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+
+  createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 
   ID3D11Device* z;
   ID3D11DeviceContext* context;
@@ -123,6 +129,25 @@ void PixelSnifferWin::initOutput(size_t index)
   }
 }
 
+void PixelSnifferWin::initDuplicator()
+{
+  // need to convert output to output1.
+  IDXGIOutput1* output1;
+
+  HRESULT hr;
+
+  hr = adapter_output_->QueryInterface(__uuidof(IDXGIOutput1),    (void**)&output1);
+  if (FAILED(hr))
+    throw std::runtime_error("Failed to query IDXGIOutput1");
+
+  IDXGIOutputDuplication* z;
+  hr = output1->DuplicateOutput(device_.get(), &z);
+
+  if (FAILED(hr))
+    throw std::runtime_error("Failed to duplicate output");
+
+  duplicator_ = releasing(z);
+}
 
 
 
@@ -148,28 +173,171 @@ bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t he
   return true;
 }
 
-bool PixelSnifferWin::grabContent() const
+
+bool PixelSnifferWin::grabContent()
 {
-  std::cout << "Grab from snifwin" << std::endl;
+
+  DXGI_OUTDUPL_FRAME_INFO info;
+  ID3D11Texture2D* frame;
+  IDXGIResource* res;
+  HRESULT hr;
+
+  if (duplicator_ == nullptr) {
+    return false;
+  }
+
+  hr = duplicator_->AcquireNextFrame(100, &info, &res);
+  if (hr == DXGI_ERROR_ACCESS_LOST) {
+    std::cerr << "Los access " << std::endl;
+    return false;
+  }
+  else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
+  {
+    std::cout << "Wait timeout " << std::endl;
+    return true;
+  }
+  else if (FAILED(hr))
+  {
+    std::cout << "Acquire next frame failed miserably." << std::endl;
+    return false;
+  }
+
+  hr = res->QueryInterface(__uuidof(ID3D11Texture2D), (void**) &frame);
+
+  if (FAILED(hr))
+  {
+    std::cerr << "Failed to query texture" << std::endl;
+    duplicator_->ReleaseFrame();
+    return false;
+  }
+
+  D3D11_TEXTURE2D_DESC tex_desc;
+  frame->GetDesc(&tex_desc);
+
+  D3D11_TEXTURE2D_DESC img_desc;
+
+  if ((image_ != nullptr)) // only retrieve data if image exists.
+  {
+    image_->GetDesc(&img_desc);
+  }
+  
+  if ((image_ == nullptr) || (img_desc.Width != tex_desc.Width) || (img_desc.Height != tex_desc.Height))  // image is different size.
+  {
+    // Need to make a new image here now...
+    /*
+    std::cout << "original tex desc:" << std::endl;
+    std::cout << "tex_desc.widtH: " << tex_desc.Width << std::endl;
+    std::cout << "tex_desc.Height: " << tex_desc.Height << std::endl;
+    std::cout << "tex_desc.MipLevels: " << tex_desc.MipLevels << std::endl;
+    std::cout << "tex_desc.ArraySize: " << tex_desc.ArraySize << std::endl;
+    std::cout << "tex_desc.Format: " << tex_desc.Format << std::endl;
+    std::cout << "tex_desc.SampleDesc.Count: " << tex_desc.SampleDesc.Count << std::endl;
+    std::cout << "tex_desc.Usage: " << tex_desc.Usage << std::endl;
+    std::cout << "tex_desc.CPUAccessFlags: " << tex_desc.CPUAccessFlags << std::endl;
+
+    D3D11_TEXTURE2D_DESC desc;
+    desc.Width = tex_desc.Width;
+    desc.Height = tex_desc.Height;
+    std::cout << "Making image of : " << desc.Width << " x " << desc.Height << std::endl;
+    desc.MipLevels = tex_desc.MipLevels;
+    desc.ArraySize = tex_desc.ArraySize;
+    desc.Format = tex_desc.Format;
+    desc.SampleDesc.Count = tex_desc.SampleDesc.Count;
+
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.BindFlags = 0;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    desc.MiscFlags = 0;
+
+
+    ID3D11Texture2D* img;
+    // Maybe this needs to be a cpu device?? 
+    hr = device_->CreateTexture2D(&desc, nullptr, &img);*/
+
+
+    ID3D11Texture2D* img;
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.Width = tex_desc.Width;
+    desc.Height = tex_desc.Height;
+    desc.Format = tex_desc.Format;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+    hr = device_->CreateTexture2D(&desc, nullptr, &img);
+
+
+    _com_error err(hr);
+    LPCTSTR errMsg = err.ErrorMessage();
+    std::cout << "Image is now: " << img << " Result: " << errMsg << std::endl;
+    image_ = releasing(img);
+  }
+  // Image is now guaranteed to be good. Copy it.
+  device_context_->CopyResource(image_.get(), frame);
+  duplicator_->ReleaseFrame();
+  
   return true;
 }
 
+
+
+
+
 Image PixelSnifferWin::getScreen() const
 {
-  std::cout << "Getscreen from snifwin" << std::endl;
+  std::cout << "Before save, image: " << image_.get() << std::endl;
+  
+
+
+  // map the texture
+  ID3D11Texture2D* mappedTexture;
+  D3D11_MAPPED_SUBRESOURCE mapInfo;
+  HRESULT hr = device_context_->Map(
+    image_.get(),
+    0,  // Subresource
+    D3D11_MAP_READ,
+    0,  // MapFlags
+    &mapInfo);
+
+  /*
+
+    // map the texture
+    ComPtr<ID3D11Texture2D> mappedTexture;
+    D3D11_MAPPED_SUBRESOURCE mapInfo;
+    mapInfo.RowPitch;
+    hr = d3dContext->Map(
+            Texture,
+            0,  // Subresource
+            D3D11_MAP_READ,
+            0,  // MapFlags
+            &mapInfo);
+            ...
+
+  https://github.com/Microsoft/graphics-driver-samples/blob/master/render-only-sample/rostest/util.cpp#L396-L400
+
+        hr = frameEncode->WritePixels(
+                desc.Height,
+                mapInfo.RowPitch,
+                desc.Height * mapInfo.RowPitch,
+                reinterpret_cast<BYTE*>(mapInfo.pData));
+  */
+  D3D11_TEXTURE2D_DESC desc;
+  image_->GetDesc(&desc);
   auto res = Image::Bitmap{};
-HWND desktop = GetDesktopWindow();
-HDC desktopHdc = GetDC(desktop);
-//COLORREF color = GetPixel(desktopHdc, x, y);
-  for (size_t x = 0; x < 50; x++)
+  for (size_t y = 0; y < desc.Height; y++)
   {
     res.push_back({});
-    for (size_t y = 0; y < 50; y++)
+    for (size_t x = 0; x < desc.Width; x++)
     {
-      std::cout << "." << std::endl;
-      res.back().push_back(GetPixel(desktopHdc, x, y));
+      auto z = reinterpret_cast<std::uint8_t*>(mapInfo.pData);
+      z = &(z[y * mapInfo.RowPitch + x * 4]);
+      res.back().push_back(*reinterpret_cast<std::uint32_t*>(z));
     }
   }
+
+  std::cout << "Getscreen from snifwin" << std::endl;
   auto screen = Image(res);
   return screen;
 }

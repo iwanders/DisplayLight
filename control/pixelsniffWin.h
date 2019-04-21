@@ -25,7 +25,10 @@
 #include <Dxgi.h>
 #include <D3dcommon.h>
 #include <D3d11.h>
+#include <Dxgi1_2.h>
 #include <Sysinfoapi.h>
+#include <Wincodec.h>
+#include <comdef.h>
 #include <memory>
 
 /*
@@ -58,7 +61,7 @@ public:
   /**
    * @brief Grab a snapshot of the capture area.
    */
-  bool grabContent() const;
+  bool grabContent();
 
   /**
    * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
@@ -88,7 +91,7 @@ public:
   void initDevice();
 
   // Four, create the duplicator.
-  //void initDuplicator();
+  void initDuplicator();
 
 protected:
   size_t capture_x_;  //!< The x position to grab from.
@@ -103,4 +106,7 @@ protected:
   std::shared_ptr<ID3D11Device> device_;
   std::shared_ptr<ID3D11DeviceContext> device_context_;
 
+  // For the actual output duplication.
+  std::shared_ptr<IDXGIOutputDuplication> duplicator_;
+  std::shared_ptr<ID3D11Texture2D> image_;
 };

@@ -23,7 +23,13 @@
 #include "pixelsniffWin.h"
 PixelSniffer::Ptr getSniffer()
 {
-  return std::make_shared<PixelSnifferWin>();
+  auto sniffer = std::make_shared<PixelSnifferWin>();
+  sniffer->initAdapter();
+  sniffer->initOutput();
+  sniffer->initDevice();
+  sniffer->initDuplicator();
+  sniffer->printVideoOutput();
+  return sniffer;
 }
 #else
 #include "pixelsniffX11.h"

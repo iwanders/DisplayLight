@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
     limiter.sleep();
     std::vector<RGB> canvasz{ lights.ledCount(), { 200, 200, 200 } };
     lights.write(canvasz);
-  }
+  }/**/
 
   while (1)
   {

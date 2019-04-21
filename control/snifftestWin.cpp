@@ -29,7 +29,10 @@ int main(int argc, char* argv[])
   sniffer->initAdapter();
   sniffer->initOutput();
   sniffer->initDevice();
+  sniffer->initDuplicator();
   sniffer->printVideoOutput();
+  sniffer->grabContent();
+  sniffer->getScreen();
   auto& sniff = *sniffer;
   sniff.connect();
 

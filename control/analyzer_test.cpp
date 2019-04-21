@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
   {
     std::cout << "./" << argv[0] << " capture image_out.bin" << std::endl;
     std::cout << "./" << argv[0] << " borderbisect image_in.bin image_out.ppm" << std::endl;
+    std::cout << "./" << argv[0] << " convert image_in.bin image_out.ppm" << std::endl;
     return 1;
   }
 
@@ -83,5 +84,15 @@ int main(int argc, char* argv[])
     outcontent.close();
   }
 
-  return 0;
+  // Test border detection.
+  if (std::string(argv[1]) == "convert")
+  {
+    // Read the file.
+    auto image = Image::readContents(argv[2]);
+    
+    // Write the analysed results as ppm file.
+    std::ofstream outcontent(argv[3]);
+    outcontent << image.imageToPPM();
+    outcontent.close();
+  }  return 0;
 }
