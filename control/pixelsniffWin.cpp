@@ -142,6 +142,9 @@ void PixelSnifferWin::initDuplicator()
   if (FAILED(hr))
     throw std::runtime_error("Failed to query IDXGIOutput1");
 
+  // If lost access, we must release the previous duplicator and make a new one.
+  duplicator_.reset();
+
   IDXGIOutputDuplication* z;
   hr = output1->DuplicateOutput(device_.get(), &z);
 
@@ -163,10 +166,13 @@ PixelSnifferWin::PixelSnifferWin()
 
 void PixelSnifferWin::connect()
 {
+  initAdapter();
+  initOutput();
+  initDevice();
+  initDuplicator();
 }
 bool PixelSnifferWin::selectRootWindow()
 {
-  std::cout << "Select from snifwin" << std::endl;
   return true;
 }
 
@@ -182,7 +188,6 @@ bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t he
 
 bool PixelSnifferWin::grabContent()
 {
-  std::cout << "Windows grabcontent" << std::endl;
   DXGI_OUTDUPL_FRAME_INFO info;
   ID3D11Texture2D* frame;
   IDXGIResource* res;
@@ -195,8 +200,9 @@ bool PixelSnifferWin::grabContent()
   hr = duplicator_->AcquireNextFrame(100, &info, &res);
 
   if (hr == DXGI_ERROR_ACCESS_LOST) {
-    std::cerr << "Los access " << std::endl;
-    return false;
+    std::cerr << "Lost access, trying to reclaim." << std::endl;
+    initDuplicator();
+    return grabContent();
   }
   else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
   {

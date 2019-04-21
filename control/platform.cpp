@@ -24,11 +24,6 @@
 PixelSniffer::Ptr getSniffer()
 {
   auto sniffer = std::make_shared<PixelSnifferWin>();
-  sniffer->initAdapter();
-  sniffer->initOutput();
-  sniffer->initDevice();
-  sniffer->initDuplicator();
-  sniffer->printVideoOutput();
   return sniffer;
 }
 #else

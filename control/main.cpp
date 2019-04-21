@@ -101,7 +101,8 @@ int main(int argc, char* argv[])
     if (!success)
     {
       std::cerr << "Could not grab desired contents. Quitting." << std::endl;
-      return 1;
+      sniff = getSniffer();
+      //return 1;
     }
     const auto image = sniff->getScreen();
     const Box bounds = analyzer.findBorders(*image);

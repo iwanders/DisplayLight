@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
   PixelSnifferWin::Ptr sniffer = std::make_shared<PixelSnifferWin>();
 
   std::cout << "initAdapter " << std::endl;
-  sniffer->initAdapter();
+  sniffer->connect();
   std::cout << "initOutput " << std::endl;
   sniffer->initOutput();
   std::cout << "initDevice " << std::endl;
