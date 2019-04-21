@@ -48,7 +48,7 @@ bool PixelSniffer::grabContent()
   return false;
 }
 
-Image::Ptr PixelSniffer::getScreen() const
+Image::Ptr PixelSniffer::getScreen()
 {
   return std::make_shared<Image>(Image::Bitmap{});
 }

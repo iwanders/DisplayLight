@@ -19,6 +19,7 @@
 */
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 #include "analyzer.h"
 #include "lights.h"
@@ -43,7 +44,7 @@ int main(int argc, char* argv[])
 
   std::string path = "COM5";
   double framerate{ 60 };
-  bool use_defaults = true;
+  bool use_defaults = false;
 
   // Handle help printing
   if ((argc < 2) && (!use_defaults))
@@ -91,6 +92,8 @@ int main(int argc, char* argv[])
     lights.write(canvasz);
   }*/
 
+  Box sample_bounds;
+  std::vector<BoxSamples> sample_points;
   while (1)
   {
     // Rate limit the loop.
@@ -100,14 +103,18 @@ int main(int argc, char* argv[])
     bool success = sniff->grabContent();
     if (!success)
     {
-      std::cerr << "Could not grab desired contents. Quitting." << std::endl;
-      sniff = getSniffer();
-      //return 1;
+      // This happens on timeout in windows... just delay 1 millisecond and try again.
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      continue;
     }
     const auto image = sniff->getScreen();
     const Box bounds = analyzer.findBorders(*image);
-    const auto samplepoints = analyzer.makeBoxSamples(distance_between_sample_pixels, bounds);
-    analyzer.sample(*image, bounds, samplepoints, canvas);
+    if (!(bounds == sample_bounds))
+    {
+      sample_points = analyzer.makeBoxSamples(distance_between_sample_pixels, bounds);
+      sample_bounds = bounds;
+    }
+    analyzer.sample(*image, bounds, sample_points, canvas);
     lights.write(canvas);
   }
 }

@@ -48,6 +48,12 @@ struct Box
     return ComparisonType(x_min, y_min, x_max, y_max) < ComparisonType(b.x_min, b.y_min, b.x_max, b.y_max);
   }
 
+  bool operator==(const Box& b) const
+  {
+    using ComparisonType = std::tuple<size_t, size_t, size_t, size_t>;
+    return ComparisonType(x_min, y_min, x_max, y_max) == ComparisonType(b.x_min, b.y_min, b.x_max, b.y_max);
+  }
+
   size_t width() const
   {
     return x_max - x_min;

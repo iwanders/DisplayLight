@@ -144,6 +144,7 @@ void PixelSnifferWin::initDuplicator()
 
   // If lost access, we must release the previous duplicator and make a new one.
   duplicator_.reset();
+  duplicator_output_.reset();
 
   IDXGIOutputDuplication* z;
   hr = output1->DuplicateOutput(device_.get(), &z);
@@ -152,6 +153,7 @@ void PixelSnifferWin::initDuplicator()
     throw std::runtime_error("Failed to duplicate output");
 
   duplicator_ = releasing(z);
+  duplicator_output_ = releasing(output1);
 
   //DXGI_OUTDUPL_DESC out_desc;
   //duplicator_->GetDesc(&out_desc);
@@ -198,7 +200,7 @@ bool PixelSnifferWin::grabContent()
   }
 
   hr = duplicator_->AcquireNextFrame(100, &info, &res);
-
+  
   if (hr == DXGI_ERROR_ACCESS_LOST) {
     std::cerr << "Lost access, trying to reclaim." << std::endl;
     initDuplicator();
@@ -206,12 +208,16 @@ bool PixelSnifferWin::grabContent()
   }
   else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
   {
-    std::cout << "Wait timeout " << std::endl;
+    //std::cout << "Wait timeout " << std::endl;
     _com_error err(hr);
     LPCTSTR errMsg = err.ErrorMessage();
-    std::cout << "HR: " << errMsg << std::endl;
+    //std::cout << "HR: " << errMsg << std::endl;
     duplicator_->ReleaseFrame();
-    return true;
+    if (image_ != nullptr)
+    {
+      return true; // we have something to deliver, just return like we got the image, even though it's an old image it's up to date.
+    }
+    return false;
   }
   else if (FAILED(hr))
   {
@@ -269,8 +275,30 @@ bool PixelSnifferWin::grabContent()
 }
 
 
-Image::Ptr PixelSnifferWin::getScreen() const
+Image::Ptr PixelSnifferWin::getScreen()
 {
-  return std::make_shared<ImageWin>(image_);
+  // Need to make a new image here now, because we can't copy into mapped images, so we need to ensure we hand off a fresh image.
+  ID3D11Texture2D* img;
+  D3D11_TEXTURE2D_DESC desc = {};
+
+  D3D11_TEXTURE2D_DESC tex_desc;
+  image_->GetDesc(&tex_desc);
+
+  desc.Width = tex_desc.Width;
+  desc.Height = tex_desc.Height;
+  desc.Format = tex_desc.Format;
+  desc.MipLevels = 1;
+  desc.ArraySize = 1;
+  desc.SampleDesc.Count = 1;
+  desc.Usage = D3D11_USAGE_STAGING;
+  desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+  HRESULT hr = device_->CreateTexture2D(&desc, nullptr, &img);
+
+  // finally, copy the data from the buffer image in this object to the image we'll hand off.
+  device_context_->CopyResource(img, image_.get());
+
+  auto imgz = releasing(img);
+  return std::make_shared<ImageWin>(imgz);
 }
 

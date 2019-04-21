@@ -67,7 +67,7 @@ public:
    * @brief Return a Image instance that is backed by the current image in the pixelsniffer.
    * @return A screen backed by the shared XImage in this class.
    */
-  Image::Ptr getScreen() const;
+  Image::Ptr getScreen();
 
   /**
    * @brief Prepares the capture area in the window.
@@ -108,5 +108,6 @@ protected:
 
   // For the actual output duplication.
   std::shared_ptr<IDXGIOutputDuplication> duplicator_;
+  std::shared_ptr<IDXGIOutput1> duplicator_output_;
   std::shared_ptr<ID3D11Texture2D> image_;
 };

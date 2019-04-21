@@ -141,6 +141,10 @@ std::vector<BoxSamples> Analyzer::makeBoxSamples(const size_t dist_between_sampl
     const auto& box = res[i].box;
     res[i].box = boxes[i];
 
+    size_t width = std::min<size_t>(1, (box.y_max - box.y_min) / dist_between_samples + 1);
+    size_t height = std::min<size_t>(1, (box.x_max - box.x_min) / dist_between_samples + 1);
+    res[i].points.reserve(width * height);
+
     // now add samples.
     for (size_t y = box.y_min; y < box.y_max; y += dist_between_samples)
     {
