@@ -52,9 +52,9 @@ add_library(lights lights.cpp)
 target_link_libraries(lights  ${Boost_LIBRARIES})
 
 add_executable(analyzer_test analyzer_test.cpp)
-target_link_libraries(analyzer_test pixelsniff analyzer platform ${platform_link})
+target_link_libraries(analyzer_test analyzer platform ${platform_link})
 
 
 add_executable(main main.cpp)
-target_link_libraries(main pixelsniff analyzer platform ${platform_link})
+target_link_libraries(main analyzer platform ${platform_link})
 

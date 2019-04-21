@@ -41,25 +41,40 @@ int main(int argc, char* argv[])
   Lights lights;
   Analyzer analyzer;
 
+  std::string path = "COM5";
+  double framerate{ 60 };
+  bool use_defaults = true;
+
   // Handle help printing
-  if ((argc < 2) || (std::string(argv[1]) == "--help"))
+  if ((argc < 2) && (!use_defaults))
+  {
+    printHelp(argv[0]);
+    return 1;
+  }
+  if ((argc >= 2) && (std::string(argv[1]) == "--help"))
   {
     printHelp(argv[0]);
     return 1;
   }
 
+  // set the path
+  if (argc >= 2)
+  {
+    path = argv[1];
+  }
+
   // Create the rate limiter with a default rate.
-  double framerate{ 60 };
   if (argc >= 3)
   {
     framerate = std::atof(argv[2]);
   }
+
   Limiter limiter{ framerate };
 
   // Try to connect to the provided serial port.
-  if (!lights.connect(argv[1]))
+  if (!lights.connect(path))
   {
-    std::cout << "Failed to connect to " << argv[1] << std::endl;
+    std::cout << "Failed to connect to " << path << std::endl;
     return 1;
   }
 
@@ -67,13 +82,14 @@ int main(int argc, char* argv[])
 
   // Create the canvas
   std::vector<RGB> canvas{ lights.ledCount(), { 0, 0, 0 } };
+  /*
   while (1)
   {
 
     limiter.sleep();
     std::vector<RGB> canvasz{ lights.ledCount(), { 200, 200, 200 } };
     lights.write(canvasz);
-  }/**/
+  }*/
 
   while (1)
   {

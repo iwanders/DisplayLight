@@ -49,7 +49,7 @@ public:
   /**
    * @brief Grab a snapshot of the capture area.
    */
-  virtual bool grabContent() const;
+  virtual bool grabContent();
 
   /**
    * @brief Return a Image instance that is backed by the current image in the pixelsniffer.

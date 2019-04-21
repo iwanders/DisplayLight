@@ -149,6 +149,10 @@ void PixelSnifferWin::initDuplicator()
     throw std::runtime_error("Failed to duplicate output");
 
   duplicator_ = releasing(z);
+
+  //DXGI_OUTDUPL_DESC out_desc;
+  //duplicator_->GetDesc(&out_desc);
+  //std::cout << "Already in mem: " << out_desc.DesktopImageInSystemMemory << " " << std::endl;
 }
 
 
@@ -178,7 +182,7 @@ bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t he
 
 bool PixelSnifferWin::grabContent()
 {
-
+  std::cout << "Windows grabcontent" << std::endl;
   DXGI_OUTDUPL_FRAME_INFO info;
   ID3D11Texture2D* frame;
   IDXGIResource* res;
@@ -189,6 +193,7 @@ bool PixelSnifferWin::grabContent()
   }
 
   hr = duplicator_->AcquireNextFrame(100, &info, &res);
+
   if (hr == DXGI_ERROR_ACCESS_LOST) {
     std::cerr << "Los access " << std::endl;
     return false;
@@ -196,6 +201,10 @@ bool PixelSnifferWin::grabContent()
   else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
   {
     std::cout << "Wait timeout " << std::endl;
+    _com_error err(hr);
+    LPCTSTR errMsg = err.ErrorMessage();
+    std::cout << "HR: " << errMsg << std::endl;
+    duplicator_->ReleaseFrame();
     return true;
   }
   else if (FAILED(hr))
@@ -226,37 +235,6 @@ bool PixelSnifferWin::grabContent()
   if ((image_ == nullptr) || (img_desc.Width != tex_desc.Width) || (img_desc.Height != tex_desc.Height))  // image is different size.
   {
     // Need to make a new image here now...
-    /*
-    std::cout << "original tex desc:" << std::endl;
-    std::cout << "tex_desc.widtH: " << tex_desc.Width << std::endl;
-    std::cout << "tex_desc.Height: " << tex_desc.Height << std::endl;
-    std::cout << "tex_desc.MipLevels: " << tex_desc.MipLevels << std::endl;
-    std::cout << "tex_desc.ArraySize: " << tex_desc.ArraySize << std::endl;
-    std::cout << "tex_desc.Format: " << tex_desc.Format << std::endl;
-    std::cout << "tex_desc.SampleDesc.Count: " << tex_desc.SampleDesc.Count << std::endl;
-    std::cout << "tex_desc.Usage: " << tex_desc.Usage << std::endl;
-    std::cout << "tex_desc.CPUAccessFlags: " << tex_desc.CPUAccessFlags << std::endl;
-
-    D3D11_TEXTURE2D_DESC desc;
-    desc.Width = tex_desc.Width;
-    desc.Height = tex_desc.Height;
-    std::cout << "Making image of : " << desc.Width << " x " << desc.Height << std::endl;
-    desc.MipLevels = tex_desc.MipLevels;
-    desc.ArraySize = tex_desc.ArraySize;
-    desc.Format = tex_desc.Format;
-    desc.SampleDesc.Count = tex_desc.SampleDesc.Count;
-
-    desc.Usage = D3D11_USAGE_STAGING;
-    desc.BindFlags = 0;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    desc.MiscFlags = 0;
-
-
-    ID3D11Texture2D* img;
-    // Maybe this needs to be a cpu device?? 
-    hr = device_->CreateTexture2D(&desc, nullptr, &img);*/
-
-
     ID3D11Texture2D* img;
     D3D11_TEXTURE2D_DESC desc = {};
     desc.Width = tex_desc.Width;
@@ -276,15 +254,13 @@ bool PixelSnifferWin::grabContent()
     std::cout << "Image is now: " << img << " Result: " << errMsg << std::endl;
     image_ = releasing(img);
   }
+
   // Image is now guaranteed to be good. Copy it.
   device_context_->CopyResource(image_.get(), frame);
   duplicator_->ReleaseFrame();
   
   return true;
 }
-
-
-
 
 
 Image::Ptr PixelSnifferWin::getScreen() const

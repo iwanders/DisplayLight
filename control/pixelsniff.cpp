@@ -42,7 +42,7 @@ bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t heigh
   return false;
 }
 
-bool PixelSniffer::grabContent() const
+bool PixelSniffer::grabContent()
 {
   std::cout << "Pixelsniffer grabContent" << std::endl;
   return false;

@@ -87,7 +87,7 @@ uint32_t ImageWin::pixel(size_t x, size_t y) const
   {
     const uint8_t* data = reinterpret_cast<const uint8_t*>(mapped_.pData);
     const uint8_t stride = (mapped_.RowPitch / getWidth());
-    return (*reinterpret_cast<const uint32_t*>(data + y * mapped_.RowPitch * stride + x * stride)) & 0x00FFFFFF;
+    return (*reinterpret_cast<const uint32_t*>(data + y * mapped_.RowPitch + x * stride)) & 0x00FFFFFF;
   }
   else
   {
