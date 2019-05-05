@@ -137,7 +137,7 @@ void PixelSnifferWin::initOutput(size_t index)
   }
 }
 
-void PixelSnifferWin::initDuplicator()
+bool PixelSnifferWin::initDuplicator()
 {
   // need to convert output to output1.
   IDXGIOutput1* output1;
@@ -155,8 +155,21 @@ void PixelSnifferWin::initDuplicator()
   IDXGIOutputDuplication* z;
   hr = output1->DuplicateOutput(device_.get(), &z);
 
+  if (E_ACCESSDENIED == hr)
+  {
+    // full screen security prompt.
+    return false;
+  }
+  if (hr == DXGI_ERROR_SESSION_DISCONNECTED)
+  {
+    // seems bad?
+    return false;
+  }
+
   if (FAILED(hr))
+  {
     throw std::runtime_error("Failed to duplicate output");
+  }
 
   duplicator_ = releasing(z);
   duplicator_output_ = releasing(output1);
@@ -165,6 +178,7 @@ void PixelSnifferWin::initDuplicator()
   // duplicator_->GetDesc(&out_desc);
   // If the data was already in memory we could map it directly... but it is not.
   // std::cout << "Already in mem: " << out_desc.DesktopImageInSystemMemory << " " << std::endl;
+  return true;
 }
 
 PixelSnifferWin::PixelSnifferWin()
@@ -191,12 +205,23 @@ bool PixelSnifferWin::prepareCapture(size_t x, size_t y, size_t width, size_t he
 
 bool PixelSnifferWin::grabContent()
 {
+  if (duplicator_ == nullptr)
+  {
+    if (!initDuplicator())
+    {
+      if (image_ != nullptr)
+      {
+        return true;  // we have something to deliver, just return like we got the image, even though it's an old image
+                      // it's up to date.
+      }
+    }
+  }
   DXGI_OUTDUPL_FRAME_INFO info;
   ID3D11Texture2D* frame;
   IDXGIResource* res;
   HRESULT hr;
 
-  hr = duplicator_->AcquireNextFrame(100, &info, &res);
+  hr = duplicator_->AcquireNextFrame(10, &info, &res);
 
   if (hr == DXGI_ERROR_ACCESS_LOST)
   {
@@ -222,6 +247,7 @@ bool PixelSnifferWin::grabContent()
   }
   else if (FAILED(hr))
   {
+    initDuplicator();
     std::cout << "Acquire next frame failed miserably." << std::endl;
     return false;
   }

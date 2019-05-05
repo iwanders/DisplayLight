@@ -105,7 +105,7 @@ public:
   /**
    * @bief Step Four, create the duplicator, if we lose the resource, we need to reinitialise this.
    */
-  void initDuplicator();
+  bool initDuplicator();
 
 protected:
   // From the graphics card to the monitor output.
