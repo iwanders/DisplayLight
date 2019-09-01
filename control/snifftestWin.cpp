@@ -46,12 +46,12 @@ int main(int argc, char* argv[])
   if (argc < 2)
   {
     std::cout << "" << argv[0] << " benchmark" << std::endl;
-    std::cout << "" << argv[0] << " grab content.ppm" << std::endl;
+    std::cout << "" << argv[0] << " grabroot content.ppm" << std::endl;
     std::cout << "" << argv[0] << " grabwindow string_in_title [content.ppm]" << std::endl;
     std::cout << "" << argv[0] << " grabpart string_in_title [content.ppm] x y w h " << std::endl;
     return 1;
   }
-  if ((std::string(argv[1]) == "grab"))
+  if ((std::string(argv[1]) == "grabroot"))
   {
     sniff.selectRootWindow();
     bool success = sniff.grabContent();

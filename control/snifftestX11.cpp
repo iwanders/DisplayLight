@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
   {
     std::cout << "" << argv[0] << " benchmark" << std::endl;
     std::cout << "" << argv[0] << " grabwindow string_in_title [content.ppm]" << std::endl;
+    std::cout << "" << argv[0] << " grabroot [content.ppm]" << std::endl;
     std::cout << "" << argv[0] << " grabpart string_in_title [content.ppm] x y w h " << std::endl;
     return 1;
   }
@@ -52,6 +53,22 @@ int main(int argc, char* argv[])
       time.stop();
     }
     std::cout << "Captures done:" << count << " avg: " << time.average() << " usec" << std::endl;
+  }
+
+  if ((std::string(argv[1]) == "grabroot"))
+  {
+    sniff.selectRootWindow();
+    sniff.grabContent();
+    auto content = sniff.getScreen();
+    std::string output_ppm = "window.ppm";
+    if (argc >= 3)
+    {
+      output_ppm = argv[2];
+    }
+    std::ofstream outcontent(output_ppm);
+    outcontent << content->imageToPPM();
+    outcontent.close();
+    return 0;
   }
 
   // Try grabbing just one window.
