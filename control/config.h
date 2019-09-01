@@ -17,45 +17,55 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#include "pixelsniff.h"
-#include <chrono>
-#include <fstream>
-#include <sstream>
+#ifndef CONFIG_H
+#define CONFIG_H
 
-PixelSniffer::PixelSniffer()
+#include <string>
+#include <cstdint>
+#include <vector>
+#include <limits>
+
+struct Condition
 {
-}
+  std::size_t min_width{ 0 };
+  std::size_t max_width{ std::numeric_limits<std::size_t>::max() };
+  std::size_t min_height{ 0 };
+  std::size_t max_height{ std::numeric_limits<std::size_t>::max() };
 
-void PixelSniffer::connect()
+  bool applies(std::size_t width, std::size_t height) const;
+  operator std::string() const;
+};
+
+struct RegionConfig
 {
-}
+  std::string name{"default"};
+  Condition condition;
 
-bool PixelSniffer::selectRootWindow()
+
+  std::size_t x_offset{ 0 };
+  std::size_t y_offset{ 0 };
+  std::size_t width{ std::numeric_limits<std::size_t>::max() };
+  std::size_t height{ std::numeric_limits<std::size_t>::max() };
+
+  operator std::string() const;
+};
+
+
+struct DisplayLightConfig
 {
-  std::cout << "Pixelsniffer root" << std::endl;
-  return prepareCapture();  // default to entire screen.
-}
 
-bool PixelSniffer::prepareCapture(size_t x, size_t y, size_t width, size_t height)
-{
-  std::cout << "Pixelsniffer prepareCapture" << std::endl;
-  return false;
-}
+  std::vector<RegionConfig> configs {RegionConfig{}};
 
-bool PixelSniffer::grabContent()
-{
-  std::cout << "Pixelsniffer grabContent" << std::endl;
-  return false;
-}
+  double frame_rate{ 60 };
 
-Image::Ptr PixelSniffer::getScreen()
-{
-  return std::make_shared<Image>(Image::Bitmap{});
-}
+  RegionConfig getApplicable(std::size_t width, std::size_t height) const;
 
+  operator std::string() const;
 
-PixelSniffer::Resolution PixelSniffer::getFullResolution()
-{
-  return Resolution(0, 0);
-}
+  static DisplayLightConfig parse(const std::string& content);
+  static DisplayLightConfig load(const std::string& filename);
+};
 
+void testConfigThing();
+
+#endif

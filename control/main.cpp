@@ -26,27 +26,30 @@
 #include "pixelsniff.h"
 #include "platform.h"
 #include "timing.h"
+#include "config.h"
 
 void printHelp(const std::string& progname)
 {
-  std::cout << "" << progname << " serial_port_path [framerate_in_hz]" << std::endl;
+  std::cout << "" << progname << " serial_port_path [config]" << std::endl;
 }
 
 int main(int argc, char* argv[])
 {
+  // testConfigThing();
+  // return 0;
+
   PixelSniffer::Ptr sniff = getSniffer();
   sniff->connect();
   sniff->selectRootWindow();
 
   Lights lights;
   Analyzer analyzer;
+  DisplayLightConfig config;
 
   std::string path = "COM5";
-  double framerate{ 60 };
-  bool use_defaults = false;
 
   // Handle help printing
-  if ((argc < 2) && (!use_defaults))
+  if (argc < 2)
   {
     printHelp(argv[0]);
     return 1;
@@ -62,14 +65,13 @@ int main(int argc, char* argv[])
   {
     path = argv[1];
   }
-
-  // Create the rate limiter with a default rate.
+  // load the config
   if (argc >= 3)
   {
-    framerate = std::atof(argv[2]);
+    config = DisplayLightConfig::load(argv[2]);
   }
 
-  Limiter limiter{ framerate };
+  Limiter limiter{ config.frame_rate };
 
   // Try to connect to the provided serial port.
   if (!lights.connect(path))
@@ -82,17 +84,12 @@ int main(int argc, char* argv[])
 
   // Create the canvas
   std::vector<RGB> canvas{ lights.ledCount(), { 0, 0, 0 } };
-  /*
-  while (1)
-  {
-
-    limiter.sleep();
-    std::vector<RGB> canvasz{ lights.ledCount(), { 200, 200, 200 } };
-    lights.write(canvasz);
-  }*/
 
   Box sample_bounds;
   std::vector<BoxSamples> sample_points;
+  // sniff.prepareCapture(x, y, w, h);
+  PixelSniffer::Resolution current_res;
+
   while (1)
   {
     // Rate limit the loop.
@@ -107,6 +104,7 @@ int main(int argc, char* argv[])
       continue;
     }
     const auto image = sniff->getScreen();
+
     const Box bounds = analyzer.findBorders(*image);
     if (!(bounds == sample_bounds))
     {
@@ -115,5 +113,16 @@ int main(int argc, char* argv[])
     }
     analyzer.sample(*image, bounds, sample_points, canvas);
     lights.write(canvas);
+
+
+    if (current_res != sniff->getFullResolution())
+    {
+      // Check which one applies.
+      current_res = sniff->getFullResolution();
+      std::cout << "New res: " << current_res.first << " x " << current_res.second << std::endl;
+      auto regionconfig = config.getApplicable(current_res.first, current_res.second);
+      std::cout << "Detected dimension change, applicable config: " << regionconfig.name << std::endl;
+      sniff->prepareCapture(regionconfig.x_offset, regionconfig.y_offset, regionconfig.width, regionconfig.height);
+    }
   }
 }

@@ -176,6 +176,9 @@ bool PixelSnifferX11::prepareCapture(size_t x, size_t y, size_t width, size_t he
   x = std::min<size_t>(x, attributes.width);
   y = std::min<size_t>(y, attributes.height);
 
+  width = std::min<size_t>(width, attributes.width - x);
+  height = std::min<size_t>(height, attributes.height - x);
+
   // Create an XImage we'll write to, this will be reused until this function is called again.
   ximage_ = std::shared_ptr<XImage>(
       XShmCreateImage(display_, attributes.visual, attributes.depth, ZPixmap, 0, &shminfo_, width, height),
@@ -221,4 +224,16 @@ bool PixelSnifferX11::grabContent()
 Image::Ptr PixelSnifferX11::getScreen()
 {
   return std::make_shared<ImageX11>(ximage_);
+}
+
+PixelSniffer::Resolution PixelSnifferX11::getFullResolution()
+{
+  int x_return, y_return;
+  unsigned int width_return, height_return;
+  unsigned int border_width_return;
+  unsigned int depth_return;
+  Window root_return = XDefaultRootWindow(display_);
+  XGetGeometry(display_, root_window_, &root_return, &x_return, &y_return, &width_return, &height_return, &border_width_return,
+               &depth_return);  // return code is discarded, can throw BadDrawable.
+  return Resolution(width_return, height_return);
 }

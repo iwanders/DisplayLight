@@ -61,6 +61,11 @@ public:
    */
   virtual size_t getHeight() const;
 
+  size_t getDimensionId() const
+  {
+    return getWidth() * 100000 + getHeight();
+  }
+
   /**
    * @brief Return the value of a pixel on the image. Format is 0x00RRGGBB
    */

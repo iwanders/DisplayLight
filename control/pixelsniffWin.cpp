@@ -328,3 +328,4 @@ Image::Ptr PixelSnifferWin::getScreen()
   auto imgz = releasing(img);
   return std::make_shared<ImageWin>(imgz);
 }
+

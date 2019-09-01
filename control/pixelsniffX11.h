@@ -110,6 +110,7 @@ public:
    */
   bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
 
+  Resolution getFullResolution();
 protected:
   Display* display_;                //!< Pointer to the current X display.
   std::shared_ptr<XImage> ximage_;  //!< Pointer to ximage representing data.

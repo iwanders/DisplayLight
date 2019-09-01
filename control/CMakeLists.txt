@@ -48,6 +48,9 @@ target_link_libraries(platform ${platform_link})
 add_library(analyzer analyzer.cpp)
 target_link_libraries(analyzer image lights)
 
+add_library(config config.cpp)
+target_link_libraries(config)
+
 add_library(lights lights.cpp)
 target_link_libraries(lights  ${Boost_LIBRARIES})
 
@@ -56,7 +59,7 @@ target_link_libraries(analyzer_test analyzer platform ${platform_link})
 
 
 add_executable(main main.cpp)
-target_link_libraries(main analyzer platform ${platform_link})
+target_link_libraries(main analyzer platform config ${platform_link})
 
 
 file(GLOB_RECURSE FORMAT_SRC_FILES  "${PROJECT_SOURCE_DIR}/**.h"  "${PROJECT_SOURCE_DIR}/**.cpp")

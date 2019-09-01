@@ -107,6 +107,8 @@ public:
    */
   bool initDuplicator();
 
+  Resolution getFullResolution();
+
 protected:
   // From the graphics card to the monitor output.
   std::shared_ptr<IDXGIFactory1> factory_;

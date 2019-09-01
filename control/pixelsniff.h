@@ -34,6 +34,7 @@ class PixelSniffer
 public:
   using Ptr = std::shared_ptr<PixelSniffer>;
   PixelSniffer();
+  using Resolution = std::pair<std::size_t, std::size_t>;
 
   /**
    * @brief Connect the X context, get display pointer. Check if the shared memory extension is present.
@@ -65,6 +66,12 @@ public:
    * @param height The height of segment to receive, if 0 the window height if used.
    */
   virtual bool prepareCapture(size_t x = 0, size_t y = 0, size_t width = 0, size_t height = 0);
+
+
+  /**
+   * @brief Return the full resolution of the entire desktop. To detect resolution changes.
+   */
+  virtual Resolution getFullResolution();
 };
 
 #endif
