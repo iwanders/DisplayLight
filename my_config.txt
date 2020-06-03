@@ -1,0 +1,6 @@
+
+frame_rate: 60
+# If the full desktop is wider than 2k pixels, use an x offset of 1920, basically only using the right monitor.
+Config: double_monitor
+condition.min_width: 2000
+x_offset: 1920
