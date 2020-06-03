@@ -80,9 +80,6 @@ void setup()
   decay_last_event = 0;
   decay_interval = 0;
 
-  // Create the gamma tables
-  computeGammaTables();
-
   // set defaults.
   config.decay_time_delay_ms = 1000;
   config.decay_interval_us = 1000;
@@ -90,6 +87,9 @@ void setup()
   config.gamma_r = 1.0;
   config.gamma_g = 1.3;
   config.gamma_b = 1.6;
+
+  // Create the gamma tables
+  computeGammaTables();
 
   // Start the ledstrip, fill it with black and show it.
   leds.begin();
